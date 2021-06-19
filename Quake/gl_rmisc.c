@@ -45,6 +45,10 @@ extern cvar_t r_lerpmodels;
 extern cvar_t r_lerpmove;
 extern cvar_t r_nolerp_list;
 extern cvar_t r_noshadow_list;
+extern cvar_t trace_monsters;
+extern cvar_t trace_secrets;
+extern cvar_t trace_shootables;
+extern cvar_t trace_moving;
 //johnfitz
 extern cvar_t gl_zfix; // QuakeSpasm z-fighting fix
 
@@ -240,6 +244,11 @@ void R_Init (void)
 	Cvar_SetCallback (&r_lavaalpha, R_SetLavaalpha_f);
 	Cvar_SetCallback (&r_telealpha, R_SetTelealpha_f);
 	Cvar_SetCallback (&r_slimealpha, R_SetSlimealpha_f);
+
+	Cvar_RegisterVariable (&trace_monsters);
+	Cvar_RegisterVariable (&trace_secrets);
+	Cvar_RegisterVariable (&trace_shootables);
+	Cvar_RegisterVariable (&trace_moving);
 
 	R_InitParticles ();
 	R_SetClearColor_f (&r_clearcolor); //johnfitz

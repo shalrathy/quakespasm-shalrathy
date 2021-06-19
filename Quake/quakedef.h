@@ -39,7 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	QUAKESPASM_VERSION	0.93
 #define	QUAKESPASM_VER_PATCH	2	// helper to print a string like 0.93.2
 #ifndef	QUAKESPASM_VER_SUFFIX
-#define	QUAKESPASM_VER_SUFFIX		// optional version suffix string literal like "-beta1"
+#define	QUAKESPASM_VER_SUFFIX	"-shalrathy1"	// optional version suffix string literal like "-beta1"
 #endif
 
 #define	QS_STRINGIFY_(x)	#x

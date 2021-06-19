@@ -106,6 +106,11 @@ cvar_t	r_lavaalpha = {"r_lavaalpha","0",CVAR_NONE};
 cvar_t	r_telealpha = {"r_telealpha","0",CVAR_NONE};
 cvar_t	r_slimealpha = {"r_slimealpha","0",CVAR_NONE};
 
+cvar_t	trace_monsters = {"trace_monsters","0",CVAR_NONE};
+cvar_t	trace_secrets = {"trace_secrets","0",CVAR_NONE};
+cvar_t	trace_shootables = {"trace_shootables","0",CVAR_NONE};
+cvar_t	trace_moving = {"trace_moving","0",CVAR_NONE};
+
 float	map_wateralpha, map_lavaalpha, map_telealpha, map_slimealpha;
 
 qboolean r_drawflat_cheatsafe, r_fullbright_cheatsafe, r_lightmap_cheatsafe, r_drawworld_cheatsafe; //johnfitz
@@ -888,6 +893,104 @@ void R_DrawShadows (void)
 	}
 }
 
+
+int doShowTracer(int value, int distsquared) {
+    if (value == 0) return 0;
+    else if (value == 1) return 1;
+    else return distsquared <= value*value;
+}
+
+void R_DrawTracers (void)
+{
+    if (!trace_monsters.value && !trace_secrets.value && !trace_shootables.value && !trace_moving.value)
+        return;
+
+    glDisable (GL_DEPTH_TEST);
+    glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
+    GL_PolygonOffset (OFFSET_SHOWTRIS);
+    glDisable (GL_TEXTURE_2D);
+    glDisable (GL_CULL_FACE);
+
+    vec3_t forward, right, up;
+    AngleVectors (r_refdef.viewangles, forward, right, up);
+    vec3_t org;
+    org[0] = cl_entities[cl.viewentity].origin[0];
+    org[1] = cl_entities[cl.viewentity].origin[1];
+    org[2] = cl_entities[cl.viewentity].origin[2];
+
+    org[0] += forward[0]*100;
+    org[1] += forward[1]*100;
+    org[2] += forward[2]*100;
+
+    int i;
+    edict_t *ed;
+    for (i=0, ed=NEXT_EDICT(sv.edicts) ; i<sv.num_edicts ; i++, ed=NEXT_EDICT(ed))
+    {
+            if (ed->free) continue;
+
+            float *mins = GetEdictFieldValue(ed, "mins")->vector;
+            float *maxs = GetEdictFieldValue(ed, "maxs")->vector;
+            float pos[3];
+            pos[0] = mins[0]+(maxs[0]-mins[0])/2;
+            pos[1] = mins[1]+(maxs[1]-mins[1])/2;
+            pos[2] = mins[2]+(maxs[2]-mins[2])/2;
+            pos[0] += ed->v.origin[0];
+            pos[1] += ed->v.origin[1];
+            pos[2] += ed->v.origin[2];
+
+            float distsquared = (org[0]-pos[0])*(org[0]-pos[0])
+                + (org[1]-pos[1])*(org[1]-pos[1])
+                + (org[2]-pos[2])*(org[2]-pos[2]);
+
+            const char* classname = PR_GetString(ed->v.classname);
+            char do_trace = 0;
+            if (strncmp(classname, "trigger_secret", strlen("trigger_secret")) == 0) {
+                if (doShowTracer(trace_secrets.value, distsquared)) {
+                    do_trace = 1;
+                    glColor3f (0,0,1);
+                }
+            }
+            if (strncmp(classname, "door", strlen("door")) == 0) {
+                if (ed->v.velocity[0] != 0 || ed->v.velocity[1] != 0 || ed->v.velocity[2] != 0) {
+                    if (doShowTracer(trace_moving.value, distsquared)) {
+                        do_trace = 1;
+                        glColor3f (0,1,0);
+                    }
+                }
+            }
+            if (strncmp(classname, "monster_", strlen("monster_")) == 0) {
+                if (GetEdictFieldValue(ed, "health")->_float > 0) {
+                    if (doShowTracer(trace_monsters.value, distsquared)) {
+                        do_trace = 1;
+                        glColor3f (1,0,0);
+                    }
+                }
+            }
+
+            eval_t *takedamage = GetEdictFieldValue(ed, "takedamage");
+            if (takedamage != NULL && takedamage->_float == 1) {
+                if (doShowTracer(trace_shootables.value, distsquared)) {
+                    do_trace = 1;
+                    glColor3f (0,1,1);
+                }
+            }
+
+            if (do_trace) {
+                glBegin (GL_LINES);
+                glVertex3f (pos[0], pos[1], pos[2]);
+                glVertex3f (org[0], org[1], org[2]);
+                glEnd ();
+            }
+    }
+
+    glColor3f (1,1,1);
+    glEnable (GL_TEXTURE_2D);
+    glEnable (GL_CULL_FACE);
+    glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
+    GL_PolygonOffset (OFFSET_NONE);
+    glEnable (GL_DEPTH_TEST);
+}
+
 /*
 ================
 R_RenderScene
@@ -924,6 +1027,8 @@ void R_RenderScene (void)
 	R_ShowTris (); //johnfitz
 
 	R_ShowBoundingBoxes (); //johnfitz
+
+        R_DrawTracers ();
 }
 
 static GLuint r_scaleview_texture;
@@ -1130,4 +1235,3 @@ void R_RenderView (void)
 					rs_dynamiclightmaps);
 	//johnfitz
 }
-

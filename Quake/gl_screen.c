@@ -86,6 +86,7 @@ cvar_t		scr_conscale = {"scr_conscale", "1", CVAR_ARCHIVE};
 cvar_t		scr_crosshairscale = {"scr_crosshairscale", "1", CVAR_ARCHIVE};
 cvar_t		scr_showfps = {"scr_showfps", "0", CVAR_NONE};
 cvar_t		scr_clock = {"scr_clock", "0", CVAR_NONE};
+cvar_t		scr_extendedhud = {"scr_extendedhud", "0", CVAR_ARCHIVE};
 //johnfitz
 cvar_t		scr_usekfont = {"scr_usekfont", "0", CVAR_NONE}; // 2021 re-release
 
@@ -407,6 +408,9 @@ void SCR_Init (void)
 	Cvar_RegisterVariable (&scr_crosshairscale);
 	Cvar_RegisterVariable (&scr_showfps);
 	Cvar_RegisterVariable (&scr_clock);
+
+        Cvar_RegisterVariable (&scr_extendedhud);
+
 	//johnfitz
 	Cvar_RegisterVariable (&scr_usekfont); // 2021 re-release
 	Cvar_SetCallback (&scr_fov, SCR_Callback_refdef);
@@ -653,6 +657,51 @@ void SCR_DrawCrosshair (void)
 	Draw_Character (-4, -4, '+'); //0,0 is center of viewport
 }
 
+void SCR_DrawExtendedHud (void)
+{
+    char str[256];
+    int	minutes, seconds, tens, units;
+
+    if (!scr_extendedhud.value)
+        return;
+
+    // manual GL_SetCanvas to avoid changing multiple files
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity ();
+    float s = scr_extendedhud.value;
+    if (s < 0) s = -s;
+    glOrtho (0, 320, 200, 0, -99999, 99999);
+    glViewport (glx, gly, 320*s, 200*s);
+
+    minutes = cl.time / 60;
+    seconds = cl.time - 60*minutes;
+    tens = seconds / 10;
+    units = seconds - 10*tens;
+    if (scr_extendedhud.value < 0) {
+        // 'A' = 65, fancy A = 193, 193-65 = 128
+        sprintf (str,"%i:%i%i %c%c%i/%i %c%c%i/%i %c%c%c%c%c%c%i %c%c%c%c%s",
+                 minutes, tens, units,
+                 'K'+128, ':'+128, cl.stats[STAT_MONSTERS], cl.stats[STAT_TOTALMONSTERS],
+                 'S'+128, ':'+128, cl.stats[STAT_SECRETS], cl.stats[STAT_TOTALSECRETS],
+                 'S'+128, 'K'+128, 'I'+128, 'L'+128, 'L'+128, ':'+128, (int)(skill.value + 0.5),
+                 'M'+128, 'A'+128, 'P'+128, ':'+128, cl.mapname);
+        Draw_String (0, 200 - 8, str);
+    } else {
+        sprintf (str,"%i:%i%i %c%c%i/%i %c%c%i/%i",
+                 minutes, tens, units,
+                 'K'+128, ':'+128, cl.stats[STAT_MONSTERS], cl.stats[STAT_TOTALMONSTERS],
+                 'S'+128, ':'+128, cl.stats[STAT_SECRETS], cl.stats[STAT_TOTALSECRETS]);
+        Draw_String (0, 200 - 24, str);
+        sprintf (str,"%c%c%c%c %s", 'M'+128, 'A'+128, 'P'+128, ':'+128, cl.mapname);
+        Draw_String (0, 200 - 16, str);
+        sprintf (str,"%c%c%c%c%c%c %i", 'S'+128, 'K'+128, 'I'+128, 'L'+128, 'L'+128, ':'+128,
+                 (int)(skill.value + 0.5));
+        Draw_String (0, 200 - 8, str);
+    }
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity ();
+}
 
 
 //=============================================================================
@@ -1102,6 +1151,7 @@ void SCR_UpdateScreen (void)
 		SCR_DrawDevStats (); //johnfitz
 		SCR_DrawFPS (); //johnfitz
 		SCR_DrawClock (); //johnfitz
+                SCR_DrawExtendedHud ();
 		SCR_DrawConsole ();
 		M_Draw ();
 	}
@@ -1112,4 +1162,3 @@ void SCR_UpdateScreen (void)
 
 	GL_EndRendering ();
 }
-

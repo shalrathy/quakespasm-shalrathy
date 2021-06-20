@@ -112,6 +112,7 @@ cvar_t	trace_monsters = {"trace_monsters","0",CVAR_NONE};
 cvar_t	trace_secrets = {"trace_secrets","0",CVAR_NONE};
 cvar_t	trace_shootables = {"trace_shootables","0",CVAR_NONE};
 cvar_t	trace_moving = {"trace_moving","0",CVAR_NONE};
+cvar_t	trace_buttons = {"trace_buttons","0",CVAR_NONE};
 
 float	map_wateralpha, map_lavaalpha, map_telealpha, map_slimealpha;
 
@@ -917,7 +918,8 @@ int doShowTracer(int value, int distsquared) {
 
 void R_DrawTracers (void)
 {
-    if (!trace_monsters.value && !trace_secrets.value && !trace_shootables.value && !trace_moving.value)
+    if (!trace_monsters.value && !trace_secrets.value && !trace_shootables.value
+        && !trace_moving.value && !trace_buttons.value)
         return;
 
     glDisable (GL_DEPTH_TEST);
@@ -978,6 +980,15 @@ void R_DrawTracers (void)
                     if (doShowTracer(trace_monsters.value, distsquared)) {
                         do_trace = 1;
                         glColor3f (1,0,0);
+                    }
+                }
+            }
+            if (strncmp(classname, "func_button", strlen("func_button")) == 0) {
+                eval_t *state = GetEdictFieldValue(ed, "state");
+                if (state == NULL || state->_int != 0) {
+                    if (doShowTracer(trace_buttons.value, distsquared)) {
+                        do_trace = 1;
+                        glColor3f (1,0,1);
                     }
                 }
             }

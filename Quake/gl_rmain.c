@@ -111,6 +111,8 @@ cvar_t	trace_secrets = {"trace_secrets","0",CVAR_NONE};
 cvar_t	trace_shootables = {"trace_shootables","0",CVAR_NONE};
 cvar_t	trace_moving = {"trace_moving","0",CVAR_NONE};
 cvar_t	trace_buttons = {"trace_buttons","0",CVAR_NONE};
+cvar_t	trace_shootables_targets = {"trace_shootables_targets","0",CVAR_NONE};
+cvar_t	trace_buttons_targets = {"trace_buttons_targets","0",CVAR_NONE};
 
 float	map_wateralpha, map_lavaalpha, map_telealpha, map_slimealpha;
 
@@ -901,11 +903,53 @@ int doShowTracer(int value, int distsquared) {
     else return distsquared <= value*value;
 }
 
+void GetEdictCenter(edict_t *ed, vec3_t pos) {
+    float *mins = GetEdictFieldValue(ed, "mins")->vector;
+    float *size = GetEdictFieldValue(ed, "size")->vector;
+    pos[0] = mins[0] + size[0] / 2;
+    pos[1] = mins[1] + size[1] / 2;
+    pos[2] = mins[2] + size[2] / 2;
+    pos[0] += ed->v.origin[0];
+    pos[1] += ed->v.origin[1];
+    pos[2] += ed->v.origin[2];
+}
+
+void R_DrawTargetsTrace (edict_t *ed, vec3_t pos) {
+    eval_t *target = GetEdictFieldValue(ed, "target");
+    if (target && strlen(PR_GetString(target->string)) >= 1) {
+        const char *target_string = PR_GetString(target->string);
+        int i;
+        edict_t *ed_target;
+        for (i=0, ed_target=NEXT_EDICT(sv.edicts) ; i<sv.num_edicts ; i++, ed_target=NEXT_EDICT(ed_target))
+        {
+            if (ed_target->free) continue;
+            eval_t *ed_target_targetname = GetEdictFieldValue(ed_target, "targetname");
+            if (ed_target_targetname) {
+                if (strcmp(target_string, PR_GetString(ed_target_targetname->string)) == 0) {
+                    const char* classname = PR_GetString(ed_target->v.classname);
+                    if (strncmp(classname, "trigger_", strlen("trigger_")) == 0) {
+                        R_DrawTargetsTrace(ed_target, pos);
+                    } else {
+                        float target_pos[3];
+                        GetEdictCenter(ed_target, target_pos);
+                        glBegin (GL_LINES);
+                        glVertex3f (pos[0], pos[1], pos[2]);
+                        glVertex3f (target_pos[0], target_pos[1], target_pos[2]);
+                        glEnd ();
+                    }
+                }
+            }
+        }
+    }
+}
+
 void R_DrawTracers (void)
 {
     if (!trace_monsters.value && !trace_secrets.value && !trace_shootables.value
-        && !trace_moving.value && !trace_buttons.value)
+        && !trace_moving.value && !trace_buttons.value && !trace_shootables_targets.value
+        && !trace_buttons_targets.value) {
         return;
+    }
 
     glDisable (GL_DEPTH_TEST);
     glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
@@ -915,7 +959,7 @@ void R_DrawTracers (void)
 
     vec3_t forward, right, up;
     AngleVectors (r_refdef.viewangles, forward, right, up);
-    vec3_t org;
+    float org[3];
     org[0] = cl_entities[cl.viewentity].origin[0];
     org[1] = cl_entities[cl.viewentity].origin[1];
     org[2] = cl_entities[cl.viewentity].origin[2];
@@ -930,15 +974,8 @@ void R_DrawTracers (void)
     {
             if (ed->free) continue;
 
-            float *mins = GetEdictFieldValue(ed, "mins")->vector;
-            float *maxs = GetEdictFieldValue(ed, "maxs")->vector;
             float pos[3];
-            pos[0] = mins[0]+(maxs[0]-mins[0])/2;
-            pos[1] = mins[1]+(maxs[1]-mins[1])/2;
-            pos[2] = mins[2]+(maxs[2]-mins[2])/2;
-            pos[0] += ed->v.origin[0];
-            pos[1] += ed->v.origin[1];
-            pos[2] += ed->v.origin[2];
+            GetEdictCenter(ed, pos);
 
             float distsquared = (org[0]-pos[0])*(org[0]-pos[0])
                 + (org[1]-pos[1])*(org[1]-pos[1])
@@ -970,7 +1007,11 @@ void R_DrawTracers (void)
             }
             if (strncmp(classname, "func_button", strlen("func_button")) == 0) {
                 eval_t *state = GetEdictFieldValue(ed, "state");
-                if (state == NULL || state->_int != 0) {
+                if (!state || state->_int != 0) {
+                    if (doShowTracer(trace_buttons_targets.value, distsquared)) {
+                        glColor3f (1,0,1);
+                        R_DrawTargetsTrace (ed, pos);
+                    }
                     if (doShowTracer(trace_buttons.value, distsquared)) {
                         do_trace = 1;
                         glColor3f (1,0,1);
@@ -980,6 +1021,10 @@ void R_DrawTracers (void)
 
             eval_t *takedamage = GetEdictFieldValue(ed, "takedamage");
             if (takedamage != NULL && takedamage->_float == 1) {
+                if (doShowTracer(trace_shootables_targets.value, distsquared)) {
+                    glColor3f (0,1,1);
+                    R_DrawTargetsTrace (ed, pos);
+                }
                 if (doShowTracer(trace_shootables.value, distsquared)) {
                     do_trace = 1;
                     glColor3f (0,1,1);

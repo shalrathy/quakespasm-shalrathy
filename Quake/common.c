@@ -1546,7 +1546,7 @@ void COM_WriteFile (const char *filename, const void *data, int len)
 		return;
 	}
 
-	Sys_Printf ("COM_WriteFile: %s\n", name);
+	Sys_Printf ("COM_WriteFile: %s\n", COM_SkipPath(name));
 	Sys_FileWrite (handle, data, len);
 	Sys_FileClose (handle);
 }

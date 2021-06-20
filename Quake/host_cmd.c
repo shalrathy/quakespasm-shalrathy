@@ -1079,7 +1079,7 @@ static void Host_Savegame_f (void)
 	q_snprintf (name, sizeof(name), "%s/%s", com_gamedir, Cmd_Argv(1));
 	COM_AddExtension (name, ".sav", sizeof(name));
 
-	Con_Printf ("Saving game to %s...\n", name);
+	Con_Printf ("Saving game to %s...\n", COM_SkipPath(name));
 	f = fopen (name, "w");
 	if (!f)
 	{
@@ -1158,7 +1158,7 @@ static void Host_Loadgame_f (void)
 // been used.  The menu calls it before stuffing loadgame command
 //	SCR_BeginLoadingPlaque ();
 
-	Con_Printf ("Loading game from %s...\n", name);
+	Con_Printf ("Loading game from %s...\n", COM_SkipPath(name));
 	
 // avoid leaking if the previous Host_Loadgame_f failed with a Host_Error
 	if (start != NULL)

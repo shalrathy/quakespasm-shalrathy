@@ -263,7 +263,7 @@ static void TexMgr_Imagedump_f (void)
 		free (buffer);
 	}
 
-	Con_Printf ("dumped %i textures to %s\n", numgltextures, dirname);
+	Con_Printf ("dumped %i textures\n", numgltextures);
 }
 
 /*

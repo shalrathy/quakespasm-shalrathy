@@ -197,7 +197,7 @@ static void Con_Dump_f (void)
 	}
 
 	fclose (f);
-	Con_Printf ("Dumped console text to %s.\n", name);
+	Con_Printf ("Dumped console text to %s.\n", COM_SkipPath(name));
 }
 
 /*

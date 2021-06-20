@@ -50,6 +50,8 @@ extern cvar_t trace_secrets;
 extern cvar_t trace_shootables;
 extern cvar_t trace_moving;
 extern cvar_t trace_buttons;
+extern cvar_t trace_shootables_targets;
+extern cvar_t trace_buttons_targets;
 //johnfitz
 extern cvar_t gl_zfix; // QuakeSpasm z-fighting fix
 
@@ -251,6 +253,8 @@ void R_Init (void)
 	Cvar_RegisterVariable (&trace_shootables);
 	Cvar_RegisterVariable (&trace_moving);
 	Cvar_RegisterVariable (&trace_buttons);
+	Cvar_RegisterVariable (&trace_shootables_targets);
+	Cvar_RegisterVariable (&trace_buttons_targets);
 
 	R_InitParticles ();
 	R_SetClearColor_f (&r_clearcolor); //johnfitz

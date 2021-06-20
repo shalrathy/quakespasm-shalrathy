@@ -1014,9 +1014,12 @@ void R_DrawTracers (void)
             }
             if (strncmp(classname, "monster_", strlen("monster_")) == 0) {
                 if (GetEdictFieldValue(ed, "health")->_float > 0) {
-                    if (doShowTracer(trace_monsters.value, distsquared)) {
-                        do_trace = 1;
-                        glColor3f (1,0,0);
+                    eval_t *takedamage = GetEdictFieldValue(ed, "takedamage");
+                    if (takedamage && takedamage->_float >= 1) { // exclude crucified zombies
+                        if (doShowTracer(trace_monsters.value, distsquared)) {
+                            do_trace = 1;
+                            glColor3f (1,0,0);
+                        }
                     }
                 }
             }

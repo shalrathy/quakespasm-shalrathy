@@ -1,5 +1,7 @@
 A port of QuakeSpasm http://quakespasm.sourceforge.net
 
+Video demonstrating changes: https://www.youtube.com/watch?v=HvL54gOdZDs
+
 # Changes
 
 ## Extended HUD

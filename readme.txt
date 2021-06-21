@@ -24,3 +24,22 @@ Draw lines highlighting various things in maps. Cheats for finding secrets.
 
 A value of `0` (default) hides the lines. A value of `1` shows all
 things in the map. A value of `1000` shows things within 1000 units.
+
+## No absolute paths
+Does not print absolute file system paths when on save, load, screenshot, etc.
+
+## Radar
+Print a M/S in the top-right corner when close to a monster/secret.
+
+`radar_secrets 1000` show S in top-right corner when a un-found secret is within 1000 units.
+`radar_monster 1000` show M in top-right corner when a alive monster is within 1000 units.
+`radar_scale 10` make the top-right letters 10x as big.
+
+# Changelog
+
+## quakespasm-0.92.3-shalrathy1
+initial version with extended hud and tracers.
+
+## quakespasm-0.92.3-shalrathy2
+Don't print absolute paths.
+Radar.

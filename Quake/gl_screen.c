@@ -87,6 +87,9 @@ cvar_t		scr_crosshairscale = {"scr_crosshairscale", "1", CVAR_ARCHIVE};
 cvar_t		scr_showfps = {"scr_showfps", "0", CVAR_NONE};
 cvar_t		scr_clock = {"scr_clock", "0", CVAR_NONE};
 cvar_t		scr_extendedhud = {"scr_extendedhud", "0", CVAR_ARCHIVE};
+cvar_t		radar_monsters = {"radar_monsters", "0", CVAR_NONE};
+cvar_t		radar_secrets = {"radar_secrets", "0", CVAR_NONE};
+cvar_t		radar_scale = {"radar_scale", "1", CVAR_ARCHIVE};
 //johnfitz
 cvar_t		scr_usekfont = {"scr_usekfont", "0", CVAR_NONE}; // 2021 re-release
 
@@ -410,6 +413,9 @@ void SCR_Init (void)
 	Cvar_RegisterVariable (&scr_clock);
 
         Cvar_RegisterVariable (&scr_extendedhud);
+        Cvar_RegisterVariable (&radar_monsters);
+        Cvar_RegisterVariable (&radar_secrets);
+        Cvar_RegisterVariable (&radar_scale);
 
 	//johnfitz
 	Cvar_RegisterVariable (&scr_usekfont); // 2021 re-release
@@ -697,6 +703,69 @@ void SCR_DrawExtendedHud (void)
         sprintf (str,"%c%c%c%c%c%c %i", 'S'+128, 'K'+128, 'I'+128, 'L'+128, 'L'+128, ':'+128,
                  (int)(skill.value + 0.5));
         Draw_String (0, 200 - 8, str);
+    }
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity ();
+}
+
+void SCR_DrawRadar (void)
+{
+    if (!radar_monsters.value && !radar_secrets.value)
+        return;
+
+    // manual GL_SetCanvas to avoid changing multiple files
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity ();
+    float s = radar_scale.value;
+    glOrtho (0, 320, 200, 0, -99999, 99999);
+    glViewport (glx+glwidth-320*s, gly+glheight-200*s, 320*s, 200*s);
+
+    float org[3];
+    org[0] = cl_entities[cl.viewentity].origin[0];
+    org[1] = cl_entities[cl.viewentity].origin[1];
+    org[2] = cl_entities[cl.viewentity].origin[2];
+
+    int nearby_monster = 0;
+    int nearby_secret = 0;
+    int i;
+    edict_t *ed;
+    for (i=0, ed=NEXT_EDICT(sv.edicts) ; i<sv.num_edicts ; i++, ed=NEXT_EDICT(ed))
+    {
+        if (ed->free) continue;
+
+        float pos[3];
+        GetEdictCenter(ed, pos);
+
+        float distsquared = (org[0]-pos[0])*(org[0]-pos[0])
+            + (org[1]-pos[1])*(org[1]-pos[1])
+            + (org[2]-pos[2])*(org[2]-pos[2]);
+
+        const char* classname = PR_GetString(ed->v.classname);
+        if (!nearby_secret && radar_secrets.value && distsquared <= radar_secrets.value*radar_secrets.value) {
+            if (strncmp(classname, "trigger_secret", strlen("trigger_secret")) == 0) {
+                nearby_secret = 1;
+            }
+        }
+        if (!nearby_monster && radar_monsters.value && distsquared <= radar_monsters.value*radar_monsters.value) {
+            if (strncmp(classname, "monster_", strlen("monster_")) == 0) {
+                if (GetEdictFieldValue(ed, "health")->_float > 0) {
+                    eval_t *takedamage = GetEdictFieldValue(ed, "takedamage");
+                    if (takedamage && takedamage->_float >= 1) { // exclude crucified zombies
+                        nearby_monster = 1;
+                    }
+                }
+            }
+        }
+    }
+
+    int x = 320 - 8;
+    if (nearby_monster) {
+        Draw_Character(x, 0, 'M');
+        x -= 8;
+    }
+    if (nearby_secret) {
+        Draw_Character(x, 0, 'S');
     }
 
     glMatrixMode(GL_MODELVIEW);
@@ -1152,6 +1221,7 @@ void SCR_UpdateScreen (void)
 		SCR_DrawFPS (); //johnfitz
 		SCR_DrawClock (); //johnfitz
                 SCR_DrawExtendedHud ();
+                SCR_DrawRadar ();
 		SCR_DrawConsole ();
 		M_Draw ();
 	}

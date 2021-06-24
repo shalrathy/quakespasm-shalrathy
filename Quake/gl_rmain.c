@@ -1027,9 +1027,12 @@ void R_DrawTracers (void)
                 }
             }
             if (strncmp(classname, "item_", strlen("item_")) == 0) {
-                if (doShowTracer(trace_items.value, distsquared)) {
-                    do_trace = 1;
-                    glColor3f (0,1,0);
+                eval_t *solid = GetEdictFieldValue(ed, "solid");
+                if (solid && solid->_int) {
+                    if (doShowTracer(trace_items.value, distsquared)) {
+                        do_trace = 1;
+                        glColor3f (0,1,0);
+                    }
                 }
             }
             if (strstr(classname_lower, trace_any_contains_lower)) {

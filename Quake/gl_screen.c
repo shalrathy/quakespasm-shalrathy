@@ -125,6 +125,8 @@ int	scr_tileclear_updates = 0; //johnfitz
 
 void SCR_ScreenShot_f (void);
 
+extern void GetEdictCenter(edict_t *ed, vec3_t pos);
+
 /*
 ===============================================================================
 

@@ -972,6 +972,15 @@ void R_DrawTracers (void)
     org[1] += forward[1]*100;
     org[2] += forward[2]*100;
 
+    char trace_any_contains_lower[128];
+    char classname_lower[128];
+
+    trace_any_contains_lower[0] = 0;
+    for (int i = 0; trace_any_contains.string[i]; i++) {
+        trace_any_contains_lower[i] = tolower(trace_any_contains.string[i]);
+        trace_any_contains_lower[i+1] = 0;
+    }
+
     int i;
     edict_t *ed;
     for (i=0, ed=NEXT_EDICT(sv.edicts) ; i<sv.num_edicts ; i++, ed=NEXT_EDICT(ed))
@@ -986,6 +995,11 @@ void R_DrawTracers (void)
                 + (org[2]-pos[2])*(org[2]-pos[2]);
 
             const char* classname = PR_GetString(ed->v.classname);
+            classname_lower[0] = 0;
+            for (int j = 0; classname[j]; j++) {
+                classname_lower[j] = tolower(classname[j]);
+                classname_lower[j+1] = 0;
+            }
             char do_trace = 0;
             if (strncmp(classname, "trigger_secret", strlen("trigger_secret")) == 0) {
                 if (doShowTracer(trace_secrets.value, distsquared)) {
@@ -1018,7 +1032,7 @@ void R_DrawTracers (void)
                     glColor3f (0,1,0);
                 }
             }
-            if (strcasestr(classname, trace_any_contains.string)) {
+            if (strstr(classname_lower, trace_any_contains_lower)) {
                 if (doShowTracer(trace_any.value, distsquared)) {
                     do_trace = 1;
                     glColor3f (1,1,1);

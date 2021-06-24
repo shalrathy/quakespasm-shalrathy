@@ -113,6 +113,10 @@ cvar_t	trace_moving = {"trace_moving","0",CVAR_NONE};
 cvar_t	trace_buttons = {"trace_buttons","0",CVAR_NONE};
 cvar_t	trace_shootables_targets = {"trace_shootables_targets","0",CVAR_NONE};
 cvar_t	trace_buttons_targets = {"trace_buttons_targets","0",CVAR_NONE};
+cvar_t	trace_items = {"trace_items","0",CVAR_NONE};
+cvar_t	trace_any = {"trace_any","0",CVAR_NONE};
+cvar_t	trace_any_contains = {"trace_any_contains","",CVAR_NONE};
+
 
 float	map_wateralpha, map_lavaalpha, map_telealpha, map_slimealpha;
 
@@ -947,7 +951,7 @@ void R_DrawTracers (void)
 {
     if (!trace_monsters.value && !trace_secrets.value && !trace_shootables.value
         && !trace_moving.value && !trace_buttons.value && !trace_shootables_targets.value
-        && !trace_buttons_targets.value) {
+        && !trace_buttons_targets.value && !trace_items.value && !trace_any.value) {
         return;
     }
 
@@ -993,7 +997,7 @@ void R_DrawTracers (void)
                 if (ed->v.velocity[0] != 0 || ed->v.velocity[1] != 0 || ed->v.velocity[2] != 0) {
                     if (doShowTracer(trace_moving.value, distsquared)) {
                         do_trace = 1;
-                        glColor3f (0,1,0);
+                        glColor3f (1,1,0);
                     }
                 }
             }
@@ -1006,6 +1010,18 @@ void R_DrawTracers (void)
                             glColor3f (1,0,0);
                         }
                     }
+                }
+            }
+            if (strncmp(classname, "item_", strlen("item_")) == 0) {
+                if (doShowTracer(trace_items.value, distsquared)) {
+                    do_trace = 1;
+                    glColor3f (0,1,0);
+                }
+            }
+            if (strcasestr(classname, trace_any_contains.string)) {
+                if (doShowTracer(trace_any.value, distsquared)) {
+                    do_trace = 1;
+                    glColor3f (1,1,1);
                 }
             }
             if (strncmp(classname, "func_button", strlen("func_button")) == 0) {

@@ -24,6 +24,7 @@ Draw lines highlighting various things in maps. Cheats for finding secrets.
 `trace_items 1` show lines to items.
 `trace_any 1` show lines to edicts whose classnames contain the value of `trace_any_contains`.
 `trace_any_contains key2` show lines to gold keys.
+`trace_print` prints `edicts` for edicts being traced.
 
 A value of `0` (default) hides the lines. A value of `1` shows all
 things in the map. A value of `1000` shows things within 1000 units.
@@ -48,4 +49,4 @@ Don't print absolute paths.
 Radar.
 
 ## quakespasm-0.92.3-shalrathy3
-add trace_items and trace_any and trace_any_contains
+add trace_items and trace_any and trace_any_contains and trace_print

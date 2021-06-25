@@ -117,7 +117,6 @@ cvar_t	trace_items = {"trace_items","0",CVAR_NONE};
 cvar_t	trace_any = {"trace_any","0",CVAR_NONE};
 cvar_t	trace_any_contains = {"trace_any_contains","",CVAR_NONE};
 
-
 float	map_wateralpha, map_lavaalpha, map_telealpha, map_slimealpha;
 
 qboolean r_drawflat_cheatsafe, r_fullbright_cheatsafe, r_lightmap_cheatsafe, r_drawworld_cheatsafe; //johnfitz
@@ -947,6 +946,13 @@ void R_DrawTargetsTrace (edict_t *ed, vec3_t pos) {
     }
 }
 
+static int trace_print_next = 0;
+
+void R_TracePrint (void)
+{
+    trace_print_next = 1;
+}
+
 void R_DrawTracers (void)
 {
     if (!trace_monsters.value && !trace_secrets.value && !trace_shootables.value
@@ -1072,6 +1078,9 @@ void R_DrawTracers (void)
                 glVertex3f (pos[0], pos[1], pos[2]);
                 glVertex3f (org[0], org[1], org[2]);
                 glEnd ();
+                if (trace_print_next) {
+                    ED_Print (ed);
+                }
             }
     }
 
@@ -1081,6 +1090,8 @@ void R_DrawTracers (void)
     glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
     GL_PolygonOffset (OFFSET_NONE);
     glEnable (GL_DEPTH_TEST);
+
+    trace_print_next = 0;
 }
 
 /*

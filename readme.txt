@@ -21,6 +21,9 @@ Draw lines highlighting various things in maps. Cheats for finding secrets.
 `trace_buttons 1` show lines to pressable buttons.
 `trace_shootables_targets 1` show lines from shootable switches to the things they activate.
 `trace_buttons_targets 1` show lines from pressable buttons to the things they activate.
+`trace_items 1` show lines to items.
+`trace_any 1` show lines to edicts whose classnames contain the value of `trace_any_contains`.
+`trace_any_contains key2` show lines to gold keys.
 
 A value of `0` (default) hides the lines. A value of `1` shows all
 things in the map. A value of `1000` shows things within 1000 units.
@@ -43,3 +46,6 @@ initial version with extended hud and tracers.
 ## quakespasm-0.92.3-shalrathy2
 Don't print absolute paths.
 Radar.
+
+## quakespasm-0.92.3-shalrathy3
+add trace_items and trace_any and trace_any_contains

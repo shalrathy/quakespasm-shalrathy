@@ -942,7 +942,9 @@ void R_TraceEdicts (void)
 }
 
 void R_DrawTraceToTargets (edict_t *ed, vec3_t pos, char tracetriggers,
-                           const char *edict_field_target, const char *edict_field_targetname) {
+                           const char *edict_field_target, const char *edict_field_targetname,
+                           int calldepth) {
+    if (calldepth > 10) return; // monster paths can be loops
     eval_t *target = GetEdictFieldValue(ed, edict_field_target);
     if (target && strlen(PR_GetString(target->string)) >= 1) {
         const char *target_string = PR_GetString(target->string);
@@ -955,7 +957,7 @@ void R_DrawTraceToTargets (edict_t *ed, vec3_t pos, char tracetriggers,
             if (ed_target_targetname) {
                 if (strcmp(target_string, PR_GetString(ed_target_targetname->string)) == 0) {
                     if (trace_edicts_next) {
-                        // might print edicts multiple times
+                        // might print edicts multiple times, and crash if too many tracers
                         ED_Print (ed_target);
                     }
                     float target_pos[3];
@@ -969,10 +971,12 @@ void R_DrawTraceToTargets (edict_t *ed, vec3_t pos, char tracetriggers,
                     }
                     if (tracetriggers) {
                         R_DrawTraceToTargets(ed_target, target_pos, tracetriggers,
-                                             edict_field_target, edict_field_targetname);
+                                             edict_field_target, edict_field_targetname,
+                                             calldepth+1);
                     } else {
                         R_DrawTraceToTargets(ed_target, pos, tracetriggers,
-                                             edict_field_target, edict_field_targetname);
+                                             edict_field_target, edict_field_targetname,
+                                             calldepth+1);
                     }
                 }
             }
@@ -1073,10 +1077,10 @@ void R_DrawTracers (void)
                     do_trace = 1;
                     glColor3f (1,1,1);
                     if (trace_any_targets.value) {
-                        R_DrawTraceToTargets (ed, pos, true, "target", "targetname");
+                        R_DrawTraceToTargets (ed, pos, true, "target", "targetname", 0);
                     }
                     if (trace_any_targetings.value) {
-                        R_DrawTraceToTargets (ed, pos, true, "targetname", "target");
+                        R_DrawTraceToTargets (ed, pos, true, "targetname", "target", 0);
                     }
                 }
             }
@@ -1087,7 +1091,7 @@ void R_DrawTracers (void)
                         do_trace = 1;
                         glColor3f (1,0,1);
                         if (trace_buttons_targets.value) {
-                            R_DrawTraceToTargets (ed, pos, false, "target", "targetname");
+                            R_DrawTraceToTargets (ed, pos, false, "target", "targetname", 0);
                         }
                     }
                 }
@@ -1099,7 +1103,7 @@ void R_DrawTracers (void)
                     do_trace = 1;
                     glColor3f (0,1,1);
                     if (trace_shootables_targets.value) {
-                        R_DrawTraceToTargets (ed, pos, false, "target", "targetname");
+                        R_DrawTraceToTargets (ed, pos, false, "target", "targetname", 0);
                     }
                 }
             }

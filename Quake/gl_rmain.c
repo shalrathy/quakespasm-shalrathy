@@ -116,6 +116,8 @@ cvar_t	trace_buttons_targets = {"trace_buttons_targets","0",CVAR_NONE};
 cvar_t	trace_items = {"trace_items","0",CVAR_NONE};
 cvar_t	trace_any = {"trace_any","0",CVAR_NONE};
 cvar_t	trace_any_contains = {"trace_any_contains","",CVAR_NONE};
+cvar_t	trace_any_targets = {"trace_any_targets","0",CVAR_NONE};
+cvar_t	trace_any_targetings = {"trace_any_targetings","0",CVAR_NONE};
 
 float	map_wateralpha, map_lavaalpha, map_telealpha, map_slimealpha;
 
@@ -917,8 +919,16 @@ void GetEdictCenter(edict_t *ed, vec3_t pos) {
     pos[2] += ed->v.origin[2];
 }
 
-void R_DrawTargetsTrace (edict_t *ed, vec3_t pos) {
-    eval_t *target = GetEdictFieldValue(ed, "target");
+static int trace_edicts_next = 0;
+
+void R_TraceEdicts (void)
+{
+    trace_edicts_next = 1;
+}
+
+void R_DrawTraceToTargets (edict_t *ed, vec3_t pos, char tracetriggers,
+                           const char *edict_field_target, const char *edict_field_targetname) {
+    eval_t *target = GetEdictFieldValue(ed, edict_field_target);
     if (target && strlen(PR_GetString(target->string)) >= 1) {
         const char *target_string = PR_GetString(target->string);
         int i;
@@ -926,19 +936,28 @@ void R_DrawTargetsTrace (edict_t *ed, vec3_t pos) {
         for (i=0, ed_target=NEXT_EDICT(sv.edicts) ; i<sv.num_edicts ; i++, ed_target=NEXT_EDICT(ed_target))
         {
             if (ed_target->free) continue;
-            eval_t *ed_target_targetname = GetEdictFieldValue(ed_target, "targetname");
+            eval_t *ed_target_targetname = GetEdictFieldValue(ed_target, edict_field_targetname);
             if (ed_target_targetname) {
                 if (strcmp(target_string, PR_GetString(ed_target_targetname->string)) == 0) {
+                    if (trace_edicts_next) {
+                        // might print edicts multiple times
+                        ED_Print (ed_target);
+                    }
+                    float target_pos[3];
+                    GetEdictCenter(ed_target, target_pos);
                     const char* classname = PR_GetString(ed_target->v.classname);
-                    if (strncmp(classname, "trigger_", strlen("trigger_")) == 0) {
-                        R_DrawTargetsTrace(ed_target, pos);
-                    } else {
-                        float target_pos[3];
-                        GetEdictCenter(ed_target, target_pos);
+                    if (tracetriggers || strncmp(classname, "trigger_", strlen("trigger_")) != 0) {
                         glBegin (GL_LINES);
                         glVertex3f (pos[0], pos[1], pos[2]);
                         glVertex3f (target_pos[0], target_pos[1], target_pos[2]);
                         glEnd ();
+                    }
+                    if (tracetriggers) {
+                        R_DrawTraceToTargets(ed_target, target_pos, tracetriggers,
+                                             edict_field_target, edict_field_targetname);
+                    } else {
+                        R_DrawTraceToTargets(ed_target, pos, tracetriggers,
+                                             edict_field_target, edict_field_targetname);
                     }
                 }
             }
@@ -946,18 +965,11 @@ void R_DrawTargetsTrace (edict_t *ed, vec3_t pos) {
     }
 }
 
-static int trace_print_next = 0;
-
-void R_TracePrint (void)
-{
-    trace_print_next = 1;
-}
-
 void R_DrawTracers (void)
 {
     if (!trace_monsters.value && !trace_secrets.value && !trace_shootables.value
-        && !trace_moving.value && !trace_buttons.value && !trace_shootables_targets.value
-        && !trace_buttons_targets.value && !trace_items.value && !trace_any.value) {
+        && !trace_moving.value && !trace_buttons.value && !trace_items.value
+        && !trace_any.value) {
         return;
     }
 
@@ -1045,31 +1057,35 @@ void R_DrawTracers (void)
                 if (doShowTracer(trace_any.value, distsquared)) {
                     do_trace = 1;
                     glColor3f (1,1,1);
+                    if (trace_any_targets.value) {
+                        R_DrawTraceToTargets (ed, pos, true, "target", "targetname");
+                    }
+                    if (trace_any_targetings.value) {
+                        R_DrawTraceToTargets (ed, pos, true, "targetname", "target");
+                    }
                 }
             }
             if (strncmp(classname, "func_button", strlen("func_button")) == 0) {
                 eval_t *state = GetEdictFieldValue(ed, "state");
                 if (!state || state->_int != 0) {
-                    if (doShowTracer(trace_buttons_targets.value, distsquared)) {
-                        glColor3f (1,0,1);
-                        R_DrawTargetsTrace (ed, pos);
-                    }
                     if (doShowTracer(trace_buttons.value, distsquared)) {
                         do_trace = 1;
                         glColor3f (1,0,1);
+                        if (trace_buttons_targets.value) {
+                            R_DrawTraceToTargets (ed, pos, false, "target", "targetname");
+                        }
                     }
                 }
             }
 
             eval_t *takedamage = GetEdictFieldValue(ed, "takedamage");
             if (takedamage != NULL && takedamage->_float == 1) {
-                if (doShowTracer(trace_shootables_targets.value, distsquared)) {
-                    glColor3f (0,1,1);
-                    R_DrawTargetsTrace (ed, pos);
-                }
                 if (doShowTracer(trace_shootables.value, distsquared)) {
                     do_trace = 1;
                     glColor3f (0,1,1);
+                    if (trace_shootables_targets.value) {
+                        R_DrawTraceToTargets (ed, pos, false, "target", "targetname");
+                    }
                 }
             }
 
@@ -1078,7 +1094,7 @@ void R_DrawTracers (void)
                 glVertex3f (pos[0], pos[1], pos[2]);
                 glVertex3f (org[0], org[1], org[2]);
                 glEnd ();
-                if (trace_print_next) {
+                if (trace_edicts_next) {
                     ED_Print (ed);
                 }
             }
@@ -1091,7 +1107,7 @@ void R_DrawTracers (void)
     GL_PolygonOffset (OFFSET_NONE);
     glEnable (GL_DEPTH_TEST);
 
-    trace_print_next = 0;
+    trace_edicts_next = 0;
 }
 
 /*

@@ -55,8 +55,10 @@ extern cvar_t trace_buttons_targets;
 extern cvar_t trace_items;
 extern cvar_t trace_any;
 extern cvar_t trace_any_contains;
+extern cvar_t trace_any_targets;
+extern cvar_t trace_any_targetings;
 
-extern void R_TracePrint (void);
+extern void R_TraceEdicts (void);
 
 //johnfitz
 extern cvar_t gl_zfix; // QuakeSpasm z-fighting fix
@@ -252,7 +254,9 @@ void R_Init (void)
 	Cvar_RegisterVariable (&trace_items);
 	Cvar_RegisterVariable (&trace_any);
 	Cvar_RegisterVariable (&trace_any_contains);
-        Cmd_AddCommand ("trace_print", R_TracePrint);
+	Cvar_RegisterVariable (&trace_any_targets);
+	Cvar_RegisterVariable (&trace_any_targetings);
+        Cmd_AddCommand ("trace_edicts", R_TraceEdicts);
 
 	R_InitParticles ();
 	R_SetClearColor_f (&r_clearcolor); //johnfitz

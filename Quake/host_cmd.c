@@ -30,6 +30,10 @@ extern cvar_t	pausable;
 
 int	current_skill;
 
+void Mod_Print (void);
+
+extern int extendedhud_loadgames;
+
 /*
 ==================
 Host_Quit_f
@@ -1195,6 +1199,8 @@ static void Host_Loadgame_f (void)
 	CL_Disconnect_f ();
 
 	SV_SpawnServer (mapname);
+
+        extendedhud_loadgames++;
 
 	if (!sv.active)
 	{

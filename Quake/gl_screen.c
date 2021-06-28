@@ -87,6 +87,7 @@ cvar_t		scr_crosshairscale = {"scr_crosshairscale", "1", CVAR_ARCHIVE};
 cvar_t		scr_showfps = {"scr_showfps", "0", CVAR_NONE};
 cvar_t		scr_clock = {"scr_clock", "0", CVAR_NONE};
 cvar_t		scr_extendedhud = {"scr_extendedhud", "0", CVAR_ARCHIVE};
+cvar_t		scr_extendedhud_loads = {"scr_extendedhud_loads", "0", CVAR_NONE};
 cvar_t		radar_monsters = {"radar_monsters", "0", CVAR_NONE};
 cvar_t		radar_secrets = {"radar_secrets", "0", CVAR_NONE};
 cvar_t		radar_scale = {"radar_scale", "1", CVAR_ARCHIVE};
@@ -394,6 +395,13 @@ void SCR_LoadPics (void)
 	scr_turtle = Draw_PicFromWad ("turtle");
 }
 
+int extendedhud_loadgames = 0;
+
+static void SCR_ExtendedHudLoads_f (cvar_t *var)
+{
+    extendedhud_loadgames = var->value;
+}
+
 /*
 ==================
 SCR_Init
@@ -415,6 +423,8 @@ void SCR_Init (void)
 	Cvar_RegisterVariable (&scr_clock);
 
         Cvar_RegisterVariable (&scr_extendedhud);
+        Cvar_RegisterVariable (&scr_extendedhud_loads);
+        Cvar_SetCallback (&scr_extendedhud_loads, &SCR_ExtendedHudLoads_f);
         Cvar_RegisterVariable (&radar_monsters);
         Cvar_RegisterVariable (&radar_secrets);
         Cvar_RegisterVariable (&radar_scale);
@@ -678,8 +688,8 @@ void SCR_DrawExtendedHud (void)
     glLoadIdentity ();
     float s = scr_extendedhud.value;
     if (s < 0) s = -s;
-    glOrtho (0, 320, 200, 0, -99999, 99999);
-    glViewport (glx, gly, 320*s, 200*s);
+    glOrtho (0, 640, 400, 0, -99999, 99999);
+    glViewport (glx, gly, 640*s, 400*s);
 
     minutes = cl.time / 60;
     seconds = cl.time - 60*minutes;
@@ -687,24 +697,28 @@ void SCR_DrawExtendedHud (void)
     units = seconds - 10*tens;
     if (scr_extendedhud.value < 0) {
         // 'A' = 65, fancy A = 193, 193-65 = 128
-        sprintf (str,"%i:%i%i %c%c%i/%i %c%c%i/%i %c%c%c%c%c%c%i %c%c%c%c%s",
+        sprintf (str,"%i:%i%i %c%c%i/%i %c%c%i/%i %c%c%c%c%c%c%i %c%c%c%c%s %c%c%c%c%c%c%i",
                  minutes, tens, units,
                  'K'+128, ':'+128, cl.stats[STAT_MONSTERS], cl.stats[STAT_TOTALMONSTERS],
                  'S'+128, ':'+128, cl.stats[STAT_SECRETS], cl.stats[STAT_TOTALSECRETS],
                  'S'+128, 'K'+128, 'I'+128, 'L'+128, 'L'+128, ':'+128, (int)(skill.value + 0.5),
-                 'M'+128, 'A'+128, 'P'+128, ':'+128, cl.mapname);
-        Draw_String (0, 200 - 8, str);
+                 'M'+128, 'A'+128, 'P'+128, ':'+128, cl.mapname,
+                 'L'+128, 'O'+128, 'A'+128, 'D'+128, 'S'+128, ':'+128, extendedhud_loadgames);
+        Draw_String (0, 400 - 8, str);
     } else {
         sprintf (str,"%i:%i%i %c%c%i/%i %c%c%i/%i",
                  minutes, tens, units,
                  'K'+128, ':'+128, cl.stats[STAT_MONSTERS], cl.stats[STAT_TOTALMONSTERS],
                  'S'+128, ':'+128, cl.stats[STAT_SECRETS], cl.stats[STAT_TOTALSECRETS]);
-        Draw_String (0, 200 - 24, str);
+        Draw_String (0, 400 - 32, str);
         sprintf (str,"%c%c%c%c %s", 'M'+128, 'A'+128, 'P'+128, ':'+128, cl.mapname);
-        Draw_String (0, 200 - 16, str);
+        Draw_String (0, 400 - 24, str);
         sprintf (str,"%c%c%c%c%c%c %i", 'S'+128, 'K'+128, 'I'+128, 'L'+128, 'L'+128, ':'+128,
                  (int)(skill.value + 0.5));
-        Draw_String (0, 200 - 8, str);
+        Draw_String (0, 400 - 16, str);
+        sprintf (str,"%c%c%c%c%c%c %i", 'L'+128, 'O'+128, 'A'+128, 'D'+128, 'S'+128, ':'+128,
+                 extendedhud_loadgames);
+        Draw_String (0, 400 - 8, str);
     }
 
     glMatrixMode(GL_MODELVIEW);

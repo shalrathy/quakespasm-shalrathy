@@ -32,7 +32,7 @@ int	current_skill;
 
 void Mod_Print (void);
 
-extern int extendedhud_loadgames;
+extern cvar_t scr_extendedhud_loads;
 
 /*
 ==================
@@ -1195,7 +1195,7 @@ void Host_Loadgame_f (void)
 
 	SV_SpawnServer (mapname);
 
-        extendedhud_loadgames++;
+        Cvar_SetValueQuick(&scr_extendedhud_loads, scr_extendedhud_loads.value + 1);
 
 	if (!sv.active)
 	{

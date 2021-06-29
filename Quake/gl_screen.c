@@ -395,13 +395,6 @@ void SCR_LoadPics (void)
 	scr_turtle = Draw_PicFromWad ("turtle");
 }
 
-int extendedhud_loadgames = 0;
-
-static void SCR_ExtendedHudLoads_f (cvar_t *var)
-{
-    extendedhud_loadgames = var->value;
-}
-
 /*
 ==================
 SCR_Init
@@ -424,7 +417,6 @@ void SCR_Init (void)
 
         Cvar_RegisterVariable (&scr_extendedhud);
         Cvar_RegisterVariable (&scr_extendedhud_loads);
-        Cvar_SetCallback (&scr_extendedhud_loads, &SCR_ExtendedHudLoads_f);
         Cvar_RegisterVariable (&radar_monsters);
         Cvar_RegisterVariable (&radar_secrets);
         Cvar_RegisterVariable (&radar_scale);
@@ -720,7 +712,7 @@ void SCR_DrawExtendedHud (void)
                  'S'+128, ':'+128, cl.stats[STAT_SECRETS], cl.stats[STAT_TOTALSECRETS],
                  'S'+128, 'K'+128, 'I'+128, 'L'+128, 'L'+128, ':'+128, (int)(skill.value + 0.5),
                  'M'+128, 'A'+128, 'P'+128, ':'+128, cl.mapname,
-                 'L'+128, 'O'+128, 'A'+128, 'D'+128, 'S'+128, ':'+128, extendedhud_loadgames);
+                 'L'+128, 'O'+128, 'A'+128, 'D'+128, 'S'+128, ':'+128, (int)scr_extendedhud_loads.value);
         Draw_String (0, 400 - 8, str);
     } else {
         sprintf (str,"%i:%i%i %c%c%i/%i %c%c%i/%i",
@@ -734,7 +726,7 @@ void SCR_DrawExtendedHud (void)
                  (int)(skill.value + 0.5));
         Draw_String (0, 400 - 16, str);
         sprintf (str,"%c%c%c%c%c%c %i", 'L'+128, 'O'+128, 'A'+128, 'D'+128, 'S'+128, ':'+128,
-                 extendedhud_loadgames);
+                 (int)scr_extendedhud_loads.value);
         Draw_String (0, 400 - 8, str);
     }
 

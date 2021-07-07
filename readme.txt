@@ -1,6 +1,8 @@
+quakespasm-shalrathy home is https://github.com/shalrathy/quakespasm-shalrathy
+
 A port of QuakeSpasm http://quakespasm.sourceforge.net
 
-Video demonstrating changes: https://www.youtube.com/watch?v=HvL54gOdZDs
+Video demonstrating (outdated) changes: https://www.youtube.com/watch?v=HvL54gOdZDs
 
 # Changes
 
@@ -10,6 +12,7 @@ Always-visible clock, kills, secrets, skill, map name. Enable with e.g. 'scr_ext
 `scr_extendedhud 0` (default) hides is.
 `scr_extendedhud 5` shows three-line hud in lower-left corner scaled 5x.
 `scr_extendedhud -2` shows one-line hud in lower-left corner scaled 2x.
+`scr_extendedhud_loads 0` set "LOADS:" in the extended hud to 0.
 
 ## Tracers
 Draw lines highlighting various things in maps. Cheats for finding secrets.
@@ -53,6 +56,5 @@ Radar.
 ## 2021-06-25 quakespasm-0.92.3-shalrathy3
 add trace_items and trace_any and trace_any_contains and trace_print.
 
-
-## 2021-06-27 quakespasm-0.92.3-shalrathy4
-add trace_any_targetings.
+## 2021-07-07 quakespasm-0.92.3-shalrathy4
+add trace_any_targetings and rename trace_print to trace_edicts and scr_extendedhud_loads.

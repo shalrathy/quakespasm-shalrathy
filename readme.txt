@@ -1,4 +1,5 @@
 quakespasm-shalrathy home is https://github.com/shalrathy/quakespasm-shalrathy
+mail: shalrathy@gmail.com
 
 A port of QuakeSpasm http://quakespasm.sourceforge.net
 

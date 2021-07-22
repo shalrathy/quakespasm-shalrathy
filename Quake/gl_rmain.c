@@ -926,7 +926,7 @@ void R_TraceEdicts (void)
     trace_edicts_next = 1;
 }
 
-void R_DrawTraceToTargets (edict_t *ed, vec3_t pos, char tracetriggers,
+void R_DrawTraceToTargetsRec (edict_t *ed, vec3_t pos, char tracetriggers,
                            const char *edict_field_target, const char *edict_field_targetname,
                            int calldepth) {
     if (calldepth > 10) return; // monster paths can be loops
@@ -955,17 +955,33 @@ void R_DrawTraceToTargets (edict_t *ed, vec3_t pos, char tracetriggers,
                         glEnd ();
                     }
                     if (tracetriggers) {
-                        R_DrawTraceToTargets(ed_target, target_pos, tracetriggers,
-                                             edict_field_target, edict_field_targetname,
-                                             calldepth+1);
+                        R_DrawTraceToTargetsRec(ed_target, target_pos, tracetriggers,
+                                                edict_field_target, edict_field_targetname,
+                                                calldepth+1);
                     } else {
-                        R_DrawTraceToTargets(ed_target, pos, tracetriggers,
-                                             edict_field_target, edict_field_targetname,
-                                             calldepth+1);
+                        R_DrawTraceToTargetsRec(ed_target, pos, tracetriggers,
+                                                edict_field_target, edict_field_targetname,
+                                                calldepth+1);
                     }
                 }
             }
         }
+    }
+}
+
+void R_DrawTraceToTargets (edict_t *ed, vec3_t pos, char tracetriggers,
+                           const char *edict_field_target, const char *edict_field_targetname,
+                           int calldepth) {
+    R_DrawTraceToTargetsRec(ed, pos, tracetriggers, edict_field_target, edict_field_targetname, calldepth);
+    if (strcmp("target", edict_field_target) == 0) {
+        R_DrawTraceToTargetsRec(ed, pos, tracetriggers, "target2", edict_field_targetname, calldepth);
+        R_DrawTraceToTargetsRec(ed, pos, tracetriggers, "target3", edict_field_targetname, calldepth);
+        R_DrawTraceToTargetsRec(ed, pos, tracetriggers, "target4", edict_field_targetname, calldepth);
+    }
+    if (strcmp("target", edict_field_targetname) == 0) {
+        R_DrawTraceToTargetsRec(ed, pos, tracetriggers, edict_field_target, "target2", calldepth);
+        R_DrawTraceToTargetsRec(ed, pos, tracetriggers, edict_field_target, "target3", calldepth);
+        R_DrawTraceToTargetsRec(ed, pos, tracetriggers, edict_field_target, "target4", calldepth);
     }
 }
 

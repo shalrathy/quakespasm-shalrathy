@@ -59,3 +59,6 @@ add trace_items and trace_any and trace_any_contains and trace_print.
 
 ## 2021-07-07 quakespasm-0.92.3-shalrathy4
 add trace_any_targetings and rename trace_print to trace_edicts and scr_extendedhud_loads.
+
+## 2021-07-22 quakespasm-0.92.3-shalrathy5
+make tracers support target2, target3, target4 used by some mods.

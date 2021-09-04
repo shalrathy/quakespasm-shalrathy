@@ -31,6 +31,7 @@ Draw lines highlighting various things in maps. Cheats for finding secrets.
 `trace_any_targets 1` show lines to edicts targeted from edicts matching `trace_any_contains`.
 `trace_any_targetings 1` show lines to edicts targeting to edicts matching `trace_any_contains`.
 `trace_edicts` prints `edicts` for edicts being traced.
+`trace_bboxes 1` show r_showbboxes for traced edicts.
 
 For `trace_x`s a value of `0` (default) hides the lines. A value of `1` shows all
 things in the map. A value of `1000` shows things within 1000 units of the player.
@@ -60,5 +61,6 @@ add trace_items and trace_any and trace_any_contains and trace_print.
 ## 2021-07-07 quakespasm-0.92.3-shalrathy4
 add trace_any_targetings and rename trace_print to trace_edicts and scr_extendedhud_loads.
 
-## 2021-07-22 quakespasm-0.92.3-shalrathy5
+## 2021-08-04 quakespasm-0.92.3-shalrathy5
 make tracers support target2, target3, target4 used by some mods.
+add trace_bboxes.

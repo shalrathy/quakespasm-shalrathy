@@ -57,6 +57,7 @@ extern cvar_t trace_any;
 extern cvar_t trace_any_contains;
 extern cvar_t trace_any_targets;
 extern cvar_t trace_any_targetings;
+extern cvar_t trace_bboxes;
 
 extern void R_TraceEdicts (void);
 
@@ -256,6 +257,7 @@ void R_Init (void)
 	Cvar_RegisterVariable (&trace_any_contains);
 	Cvar_RegisterVariable (&trace_any_targets);
 	Cvar_RegisterVariable (&trace_any_targetings);
+	Cvar_RegisterVariable (&trace_bboxes);
         Cmd_AddCommand ("trace_edicts", R_TraceEdicts);
 
 	R_InitParticles ();

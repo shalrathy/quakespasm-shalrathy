@@ -118,6 +118,7 @@ cvar_t	trace_any = {"trace_any","0",CVAR_NONE};
 cvar_t	trace_any_contains = {"trace_any_contains","",CVAR_NONE};
 cvar_t	trace_any_targets = {"trace_any_targets","0",CVAR_NONE};
 cvar_t	trace_any_targetings = {"trace_any_targetings","0",CVAR_NONE};
+cvar_t	trace_bboxes = {"trace_bboxes","0",CVAR_NONE};
 
 float	map_wateralpha, map_lavaalpha, map_telealpha, map_slimealpha;
 
@@ -930,6 +931,7 @@ void R_DrawTraceToTargetsRec (edict_t *ed, vec3_t pos, char tracetriggers,
                            const char *edict_field_target, const char *edict_field_targetname,
                            int calldepth) {
     if (calldepth > 10) return; // monster paths can be loops
+    vec3_t mins, maxs;
     eval_t *target = GetEdictFieldValue(ed, edict_field_target);
     if (target && strlen(PR_GetString(target->string)) >= 1) {
         const char *target_string = PR_GetString(target->string);
@@ -944,6 +946,18 @@ void R_DrawTraceToTargetsRec (edict_t *ed, vec3_t pos, char tracetriggers,
                     if (trace_edicts_next) {
                         // might print edicts multiple times, and crash if too many tracers
                         ED_Print (ed_target);
+                    }
+                    if (trace_bboxes.value) {
+                        // copy-pasted from R_ShowBoundingBoxes
+                        if (ed_target->v.mins[0] == ed_target->v.maxs[0]
+                            && ed_target->v.mins[1] == ed_target->v.maxs[1]
+                            && ed_target->v.mins[2] == ed_target->v.maxs[2]) {
+                            R_EmitWirePoint (ed_target->v.origin);
+                        } else {
+                            VectorAdd (ed_target->v.mins, ed_target->v.origin, mins);
+                            VectorAdd (ed_target->v.maxs, ed_target->v.origin, maxs);
+                            R_EmitWireBox (mins, maxs);
+                        }
                     }
                     float target_pos[3];
                     GetEdictCenter(ed_target, target_pos);
@@ -1000,6 +1014,7 @@ void R_DrawTracers (void)
     glDisable (GL_CULL_FACE);
 
     vec3_t forward, right, up;
+    vec3_t mins, maxs;
     AngleVectors (r_refdef.viewangles, forward, right, up);
     float org[3];
     org[0] = cl_entities[cl.viewentity].origin[0];
@@ -1116,6 +1131,18 @@ void R_DrawTracers (void)
                 glEnd ();
                 if (trace_edicts_next) {
                     ED_Print (ed);
+                }
+                if (trace_bboxes.value) {
+                    // copy-pasted from R_ShowBoundingBoxes
+                    if (ed->v.mins[0] == ed->v.maxs[0]
+                        && ed->v.mins[1] == ed->v.maxs[1]
+                        && ed->v.mins[2] == ed->v.maxs[2]) {
+                        R_EmitWirePoint (ed->v.origin);
+                    } else {
+                        VectorAdd (ed->v.mins, ed->v.origin, mins);
+                        VectorAdd (ed->v.maxs, ed->v.origin, maxs);
+                        R_EmitWireBox (mins, maxs);
+                    }
                 }
             }
     }

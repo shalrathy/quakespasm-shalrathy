@@ -470,6 +470,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Quake\miniz.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Quake\net_dgrm.c"
 				>
 			</File>
@@ -559,6 +563,10 @@
 			</File>
 			<File
 				RelativePath="..\..\Quake\snd_mp3.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Quake\snd_mp3tag.c"
 				>
 			</File>
 			<File
@@ -729,6 +737,10 @@
 			</File>
 			<File
 				RelativePath="..\..\Quake\menu.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Quake\miniz.h"
 				>
 			</File>
 			<File

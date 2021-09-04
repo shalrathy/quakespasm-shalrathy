@@ -45,6 +45,22 @@ extern cvar_t r_lerpmodels;
 extern cvar_t r_lerpmove;
 extern cvar_t r_nolerp_list;
 extern cvar_t r_noshadow_list;
+extern cvar_t trace_monsters;
+extern cvar_t trace_secrets;
+extern cvar_t trace_shootables;
+extern cvar_t trace_moving;
+extern cvar_t trace_buttons;
+extern cvar_t trace_shootables_targets;
+extern cvar_t trace_buttons_targets;
+extern cvar_t trace_items;
+extern cvar_t trace_any;
+extern cvar_t trace_any_contains;
+extern cvar_t trace_any_targets;
+extern cvar_t trace_any_targetings;
+extern cvar_t trace_bboxes;
+
+extern void R_TraceEdicts (void);
+
 //johnfitz
 extern cvar_t gl_zfix; // QuakeSpasm z-fighting fix
 
@@ -227,6 +243,21 @@ void R_Init (void)
 	Cvar_SetCallback (&r_lavaalpha, R_SetLavaalpha_f);
 	Cvar_SetCallback (&r_telealpha, R_SetTelealpha_f);
 	Cvar_SetCallback (&r_slimealpha, R_SetSlimealpha_f);
+
+	Cvar_RegisterVariable (&trace_monsters);
+	Cvar_RegisterVariable (&trace_secrets);
+	Cvar_RegisterVariable (&trace_shootables);
+	Cvar_RegisterVariable (&trace_moving);
+	Cvar_RegisterVariable (&trace_buttons);
+	Cvar_RegisterVariable (&trace_shootables_targets);
+	Cvar_RegisterVariable (&trace_buttons_targets);
+	Cvar_RegisterVariable (&trace_items);
+	Cvar_RegisterVariable (&trace_any);
+	Cvar_RegisterVariable (&trace_any_contains);
+	Cvar_RegisterVariable (&trace_any_targets);
+	Cvar_RegisterVariable (&trace_any_targetings);
+	Cvar_RegisterVariable (&trace_bboxes);
+        Cmd_AddCommand ("trace_edicts", R_TraceEdicts);
 
 	R_InitParticles ();
 	R_SetClearColor_f (&r_clearcolor); //johnfitz

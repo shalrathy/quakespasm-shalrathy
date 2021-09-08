@@ -57,8 +57,8 @@
 			<Add library="winmm" />
 			<Add library="opengl32" />
 			<Add library="wsock32" />
-			<Add directory="..\codecs\x86" />
-			<Add directory="..\SDL\lib" />
+			<Add directory="..\codecs\x64" />
+			<Add directory="..\SDL\lib64" />
 		</Linker>
 		<Unit filename="..\..\Quake\anorm_dots.h" />
 		<Unit filename="..\..\Quake\anorms.h" />

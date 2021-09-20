@@ -2573,7 +2573,7 @@ void LOC_LoadFile (const char *file)
 		{
 fail:			mz_zip_reader_end(&archive);
 			if (rw) SDL_RWclose(rw);
-			Con_Printf("Couldn't load '%s'\nfrom '%s'\n", file, com_basedir);
+			Con_Printf("Couldn't load '%s'\n", file);
 			return;
 		}
 		SDL_RWread(rw, localization.text, 1, sz);

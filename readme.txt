@@ -64,3 +64,4 @@ add trace_any_targetings and rename trace_print to trace_edicts and scr_extended
 ## 2021-08-08 quakespasm-0.94.1-shalrathy5
 make tracers support target2, target3, target4 used by some mods.
 add trace_bboxes.
+remove absolute path from new localization code.

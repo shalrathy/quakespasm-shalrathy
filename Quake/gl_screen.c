@@ -779,7 +779,8 @@ void SCR_DrawRadar (void)
             if (strncmp(classname, "monster_", strlen("monster_")) == 0) {
                 if (GetEdictFieldValue(ed, "health")->_float > 0) {
                     eval_t *takedamage = GetEdictFieldValue(ed, "takedamage");
-                    if (takedamage && takedamage->_float >= 1) { // exclude crucified zombies
+                    int smp_trigger_spawn = ((int)ed->v.spawnflags & 8); // smp mod monster spawn-in
+                    if (smp_trigger_spawn || (takedamage && takedamage->_float >= 1)) { // exclude crucified zombies
                         nearby_monster = 1;
                     }
                 }

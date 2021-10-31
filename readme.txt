@@ -19,6 +19,7 @@ Always-visible clock, kills, secrets, skill, map name. Enable with e.g. 'scr_ext
 Draw lines highlighting various things in maps. Cheats for finding secrets.
 
 `trace_monsters 1` show lines to all remaining monsters.
+`trace_monsters_targetings 1` show lines to edicts targeting traced monsters.
 `trace_secrets 1` show lines to all remaining secrets.
 `trace_shootables 1` show lines to all shootable switches.
 `trace_moving 1` show lines to moving doors.
@@ -67,4 +68,5 @@ add trace_bboxes.
 remove absolute path from new localization code.
 
 ## 2021-10-31 quakespasm-0.94.1-shalrathy6
-trace_monsters and radar_monsters shows monsters that have not spawned in yet (SMP mod feature)
+trace_monsters and radar_monsters shows monsters that have not spawned in yet (SMP mod feature).
+added trace_monsters_targetings.

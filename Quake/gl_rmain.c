@@ -109,6 +109,7 @@ cvar_t	r_telealpha = {"r_telealpha","0",CVAR_NONE};
 cvar_t	r_slimealpha = {"r_slimealpha","0",CVAR_NONE};
 
 cvar_t	trace_monsters = {"trace_monsters","0",CVAR_NONE};
+cvar_t	trace_monsters_targetings = {"trace_monsters_targetings","0",CVAR_NONE};
 cvar_t	trace_secrets = {"trace_secrets","0",CVAR_NONE};
 cvar_t	trace_shootables = {"trace_shootables","0",CVAR_NONE};
 cvar_t	trace_moving = {"trace_moving","0",CVAR_NONE};
@@ -1064,6 +1065,9 @@ void R_DrawTracers (void)
                         if (doShowTracer(trace_monsters.value, distsquared)) {
                             do_trace = 1;
                             glColor3f (1,0,0);
+                            if (trace_monsters_targetings.value) {
+                                R_DrawTraceToTargets (ed, pos, true, "targetname", "target", 0);
+                            }
                         }
                     }
                 }

@@ -42,8 +42,8 @@ Does not print absolute file system paths when on save, load, screenshot, etc.
 ## Radar
 Print a M/S in the top-right corner when close to a monster/secret.
 
-`radar_secrets 1000` show S in top-right corner when a un-found secret is within 1000 units.
-`radar_monster 1000` show M in top-right corner when a alive monster is within 1000 units.
+`radar_secrets 1000` show S in top-right corner when an un-found secret is within 1000 units.
+`radar_monsters 1000` show M in top-right corner when a live monster is within 1000 units.
 `radar_scale 10` make the top-right letters 10x as big.
 
 # Changelog
@@ -65,3 +65,6 @@ add trace_any_targetings and rename trace_print to trace_edicts and scr_extended
 make tracers support target2, target3, target4 used by some mods.
 add trace_bboxes.
 remove absolute path from new localization code.
+
+## 2021-10-31 quakespasm-0.94.1-shalrathy6
+trace_monsters and radar_monsters shows monsters that have not spawned in yet (SMP mod feature)

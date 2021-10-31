@@ -46,6 +46,7 @@ extern cvar_t r_lerpmove;
 extern cvar_t r_nolerp_list;
 extern cvar_t r_noshadow_list;
 extern cvar_t trace_monsters;
+extern cvar_t trace_monsters_targetings;
 extern cvar_t trace_secrets;
 extern cvar_t trace_shootables;
 extern cvar_t trace_moving;
@@ -246,6 +247,7 @@ void R_Init (void)
 	Cvar_SetCallback (&r_slimealpha, R_SetSlimealpha_f);
 
 	Cvar_RegisterVariable (&trace_monsters);
+	Cvar_RegisterVariable (&trace_monsters_targetings);
 	Cvar_RegisterVariable (&trace_secrets);
 	Cvar_RegisterVariable (&trace_shootables);
 	Cvar_RegisterVariable (&trace_moving);

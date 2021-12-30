@@ -67,6 +67,7 @@ make tracers support target2, target3, target4 used by some mods.
 add trace_bboxes.
 remove absolute path from new localization code.
 
-## 2021-10-31 quakespasm-0.94.1-shalrathy6
+## 2021-12-30 quakespasm-0.94.1-shalrathy6
 trace_monsters and radar_monsters shows monsters that have not spawned in yet (SMP mod feature).
 added trace_monsters_targetings.
+trace_secrets no longer shows discovered item-pick-up secrets in ad.

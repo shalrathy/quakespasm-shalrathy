@@ -751,8 +751,11 @@ void SCR_DrawRadar (void)
 
         const char* classname = PR_GetString(ed->v.classname);
         if (!nearby_secret && radar_secrets.value && distsquared <= radar_secrets.value*radar_secrets.value) {
-            if (strncmp(classname, "trigger_secret", strlen("trigger_secret")) == 0) {
-                nearby_secret = 1;
+            eval_t *estate = GetEdictFieldValue(ed, "estate");
+            if (!estate || estate->_float != 2.0) { // hide ad disabled secret triggers
+                if (strncmp(classname, "trigger_secret", strlen("trigger_secret")) == 0) {
+                    nearby_secret = 1;
+                }
             }
         }
         if (!nearby_monster && radar_monsters.value && distsquared <= radar_monsters.value*radar_monsters.value) {

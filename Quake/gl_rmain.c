@@ -1056,9 +1056,12 @@ void R_DrawTracers (void)
             }
             char do_trace = 0;
             if (strncmp(classname, "trigger_secret", strlen("trigger_secret")) == 0) {
-                if (doShowTracer(trace_secrets.value, distsquared)) {
-                    do_trace = 1;
-                    glColor3f (0,0,1);
+                eval_t *estate = GetEdictFieldValue(ed, "estate");
+                if (!estate || estate->_float != 2.0) { // hide ad disabled secret triggers
+                    if (doShowTracer(trace_secrets.value, distsquared)) {
+                        do_trace = 1;
+                        glColor3f (0,0,1);
+                    }
                 }
             }
             if (strncmp(classname, "door", strlen("door")) == 0) {

@@ -1075,8 +1075,9 @@ void R_DrawTracers (void)
             if (strncmp(classname, "monster_", strlen("monster_")) == 0) {
                 if (GetEdictFieldValue(ed, "health")->_float > 0) {
                     eval_t *takedamage = GetEdictFieldValue(ed, "takedamage");
-                    int smp_trigger_spawn = ((int)ed->v.spawnflags & 8); // smp mod monster spawn-in
-                    if (smp_trigger_spawn || (takedamage && takedamage->_float >= 1)) { // exclude crucified zombies
+                    int teleports_in = ((int)ed->v.spawnflags & 8) // smp mod monster spawn-in
+                        || ((int)ed->v.spawnflags & (1<<6)); // ad mod monster spawn-in
+                    if (teleports_in || (takedamage && takedamage->_float >= 1)) { // exclude crucified zombies
                         if (doShowTracer(trace_monsters.value, distsquared)) {
                             do_trace = 1;
                             glColor3f (1,0,0);

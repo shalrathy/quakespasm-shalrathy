@@ -286,7 +286,7 @@ void CL_Record_f (void)
 // open the demo file
 	COM_AddExtension (name, ".dem", sizeof(name));
 
-	Con_Printf ("recording to %s.\n", name);
+	Con_Printf ("recording to %s.\n", COM_SkipPath(name));
 	cls.demofile = fopen (name, "wb");
 	if (!cls.demofile)
 	{

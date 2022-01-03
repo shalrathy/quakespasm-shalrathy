@@ -8,7 +8,7 @@
 DO_USERDIRS=0
 
 ### Enable/Disable SDL2
-USE_SDL2=0
+USE_SDL2=1
 
 ### Enable/Disable codecs for streaming music support
 USE_CODEC_WAVE=1

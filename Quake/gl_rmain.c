@@ -108,6 +108,21 @@ cvar_t	r_lavaalpha = {"r_lavaalpha","0",CVAR_NONE};
 cvar_t	r_telealpha = {"r_telealpha","0",CVAR_NONE};
 cvar_t	r_slimealpha = {"r_slimealpha","0",CVAR_NONE};
 
+cvar_t	trace_monsters = {"trace_monsters","0",CVAR_NONE};
+cvar_t	trace_monsters_targetings = {"trace_monsters_targetings","0",CVAR_NONE};
+cvar_t	trace_secrets = {"trace_secrets","0",CVAR_NONE};
+cvar_t	trace_shootables = {"trace_shootables","0",CVAR_NONE};
+cvar_t	trace_moving = {"trace_moving","0",CVAR_NONE};
+cvar_t	trace_buttons = {"trace_buttons","0",CVAR_NONE};
+cvar_t	trace_shootables_targets = {"trace_shootables_targets","0",CVAR_NONE};
+cvar_t	trace_buttons_targets = {"trace_buttons_targets","0",CVAR_NONE};
+cvar_t	trace_items = {"trace_items","0",CVAR_NONE};
+cvar_t	trace_any = {"trace_any","0",CVAR_NONE};
+cvar_t	trace_any_contains = {"trace_any_contains","",CVAR_NONE};
+cvar_t	trace_any_targets = {"trace_any_targets","0",CVAR_NONE};
+cvar_t	trace_any_targetings = {"trace_any_targetings","0",CVAR_NONE};
+cvar_t	trace_bboxes = {"trace_bboxes","0",CVAR_NONE};
+
 float	map_wateralpha, map_lavaalpha, map_telealpha, map_slimealpha;
 
 qboolean r_drawflat_cheatsafe, r_fullbright_cheatsafe, r_lightmap_cheatsafe, r_drawworld_cheatsafe; //johnfitz
@@ -876,6 +891,269 @@ void R_DrawShadows (void)
 	}
 }
 
+
+int doShowTracer(int value, int distsquared) {
+    if (value == 0) return 0;
+    else if (value == 1) return 1;
+    else return distsquared <= value*value;
+}
+
+void GetEdictCenter(edict_t *ed, vec3_t pos) {
+    float *mins = GetEdictFieldValue(ed, "mins")->vector;
+    float *size = GetEdictFieldValue(ed, "size")->vector;
+    pos[0] = mins[0] + size[0] / 2;
+    pos[1] = mins[1] + size[1] / 2;
+    pos[2] = mins[2] + size[2] / 2;
+    pos[0] += ed->v.origin[0];
+    pos[1] += ed->v.origin[1];
+    pos[2] += ed->v.origin[2];
+}
+
+static int trace_edicts_next = 0;
+
+void R_TraceEdicts (void)
+{
+    trace_edicts_next = 1;
+}
+
+void R_DrawTraceToTargetsRec (edict_t *ed, vec3_t pos, char tracetriggers,
+                           const char *edict_field_target, const char *edict_field_targetname,
+                           int calldepth) {
+    if (calldepth > 10) return; // monster paths can be loops
+    vec3_t mins, maxs;
+    eval_t *target = GetEdictFieldValue(ed, edict_field_target);
+    if (target && strlen(PR_GetString(target->string)) >= 1) {
+        const char *target_string = PR_GetString(target->string);
+        int i;
+        edict_t *ed_target;
+        for (i=0, ed_target=NEXT_EDICT(sv.edicts) ; i<sv.num_edicts ; i++, ed_target=NEXT_EDICT(ed_target))
+        {
+            if (ed_target->free) continue;
+            eval_t *ed_target_targetname = GetEdictFieldValue(ed_target, edict_field_targetname);
+            if (ed_target_targetname) {
+                if (strcmp(target_string, PR_GetString(ed_target_targetname->string)) == 0) {
+                    if (trace_edicts_next) {
+                        // might print edicts multiple times, and crash if too many tracers
+                        ED_Print (ed_target);
+                    }
+                    if (trace_bboxes.value) {
+                        // copy-pasted from R_ShowBoundingBoxes
+                        if (ed_target->v.mins[0] == ed_target->v.maxs[0]
+                            && ed_target->v.mins[1] == ed_target->v.maxs[1]
+                            && ed_target->v.mins[2] == ed_target->v.maxs[2]) {
+                            R_EmitWirePoint (ed_target->v.origin);
+                        } else {
+                            VectorAdd (ed_target->v.mins, ed_target->v.origin, mins);
+                            VectorAdd (ed_target->v.maxs, ed_target->v.origin, maxs);
+                            R_EmitWireBox (mins, maxs);
+                        }
+                    }
+                    float target_pos[3];
+                    GetEdictCenter(ed_target, target_pos);
+                    const char* classname = PR_GetString(ed_target->v.classname);
+                    if (tracetriggers || strncmp(classname, "trigger_", strlen("trigger_")) != 0) {
+                        glBegin (GL_LINES);
+                        glVertex3f (pos[0], pos[1], pos[2]);
+                        glVertex3f (target_pos[0], target_pos[1], target_pos[2]);
+                        glEnd ();
+                    }
+                    if (tracetriggers) {
+                        R_DrawTraceToTargetsRec(ed_target, target_pos, tracetriggers,
+                                                edict_field_target, edict_field_targetname,
+                                                calldepth+1);
+                    } else {
+                        R_DrawTraceToTargetsRec(ed_target, pos, tracetriggers,
+                                                edict_field_target, edict_field_targetname,
+                                                calldepth+1);
+                    }
+                }
+            }
+        }
+    }
+}
+
+void R_DrawTraceToTargets (edict_t *ed, vec3_t pos, char tracetriggers,
+                           const char *edict_field_target, const char *edict_field_targetname,
+                           int calldepth) {
+    R_DrawTraceToTargetsRec(ed, pos, tracetriggers, edict_field_target, edict_field_targetname, calldepth);
+    if (strcmp("target", edict_field_target) == 0) {
+        R_DrawTraceToTargetsRec(ed, pos, tracetriggers, "target2", edict_field_targetname, calldepth);
+        R_DrawTraceToTargetsRec(ed, pos, tracetriggers, "target3", edict_field_targetname, calldepth);
+        R_DrawTraceToTargetsRec(ed, pos, tracetriggers, "target4", edict_field_targetname, calldepth);
+    }
+    if (strcmp("target", edict_field_targetname) == 0) {
+        R_DrawTraceToTargetsRec(ed, pos, tracetriggers, edict_field_target, "target2", calldepth);
+        R_DrawTraceToTargetsRec(ed, pos, tracetriggers, edict_field_target, "target3", calldepth);
+        R_DrawTraceToTargetsRec(ed, pos, tracetriggers, edict_field_target, "target4", calldepth);
+    }
+}
+
+void R_DrawTracers (void)
+{
+    if (!trace_monsters.value && !trace_secrets.value && !trace_shootables.value
+        && !trace_moving.value && !trace_buttons.value && !trace_items.value
+        && !trace_any.value) {
+        return;
+    }
+
+    glDisable (GL_DEPTH_TEST);
+    glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
+    GL_PolygonOffset (OFFSET_SHOWTRIS);
+    glDisable (GL_TEXTURE_2D);
+    glDisable (GL_CULL_FACE);
+
+    vec3_t forward, right, up;
+    vec3_t mins, maxs;
+    AngleVectors (r_refdef.viewangles, forward, right, up);
+    float org[3];
+    org[0] = cl_entities[cl.viewentity].origin[0];
+    org[1] = cl_entities[cl.viewentity].origin[1];
+    org[2] = cl_entities[cl.viewentity].origin[2];
+
+    org[0] += forward[0]*100;
+    org[1] += forward[1]*100;
+    org[2] += forward[2]*100;
+
+    char trace_any_contains_lower[128];
+    char classname_lower[128];
+
+    trace_any_contains_lower[0] = 0;
+    for (int i = 0; trace_any_contains.string[i]; i++) {
+        trace_any_contains_lower[i] = tolower(trace_any_contains.string[i]);
+        trace_any_contains_lower[i+1] = 0;
+    }
+
+    int i;
+    edict_t *ed;
+    for (i=0, ed=NEXT_EDICT(sv.edicts) ; i<sv.num_edicts ; i++, ed=NEXT_EDICT(ed))
+    {
+            if (ed->free) continue;
+
+            float pos[3];
+            GetEdictCenter(ed, pos);
+
+            float distsquared = (org[0]-pos[0])*(org[0]-pos[0])
+                + (org[1]-pos[1])*(org[1]-pos[1])
+                + (org[2]-pos[2])*(org[2]-pos[2]);
+
+            const char* classname = PR_GetString(ed->v.classname);
+            classname_lower[0] = 0;
+            for (int j = 0; classname[j]; j++) {
+                classname_lower[j] = tolower(classname[j]);
+                classname_lower[j+1] = 0;
+            }
+            char do_trace = 0;
+            if (strncmp(classname, "trigger_secret", strlen("trigger_secret")) == 0) {
+                eval_t *estate = GetEdictFieldValue(ed, "estate");
+                if (!estate || estate->_float != 2.0) { // hide ad disabled secret triggers
+                    if (doShowTracer(trace_secrets.value, distsquared)) {
+                        do_trace = 1;
+                        glColor3f (0,0,1);
+                    }
+                }
+            }
+            if (strncmp(classname, "door", strlen("door")) == 0) {
+                if (ed->v.velocity[0] != 0 || ed->v.velocity[1] != 0 || ed->v.velocity[2] != 0) {
+                    if (doShowTracer(trace_moving.value, distsquared)) {
+                        do_trace = 1;
+                        glColor3f (1,1,0);
+                    }
+                }
+            }
+            if (strncmp(classname, "monster_", strlen("monster_")) == 0) {
+                if (GetEdictFieldValue(ed, "health")->_float > 0) {
+                    eval_t *takedamage = GetEdictFieldValue(ed, "takedamage");
+                    int teleports_in = ((int)ed->v.spawnflags & 8) // smp mod monster spawn-in
+                        || ((int)ed->v.spawnflags & (1<<6)); // ad mod monster spawn-in
+                    if (teleports_in || (takedamage && takedamage->_float >= 1)) { // exclude crucified zombies
+                        if (doShowTracer(trace_monsters.value, distsquared)) {
+                            do_trace = 1;
+                            glColor3f (1,0,0);
+                            if (trace_monsters_targetings.value) {
+                                R_DrawTraceToTargets (ed, pos, true, "targetname", "target", 0);
+                            }
+                        }
+                    }
+                }
+            }
+            if (strncmp(classname, "item_", strlen("item_")) == 0) {
+                eval_t *solid = GetEdictFieldValue(ed, "solid");
+                if (solid && solid->_int) {
+                    if (doShowTracer(trace_items.value, distsquared)) {
+                        do_trace = 1;
+                        glColor3f (0,1,0);
+                    }
+                }
+            }
+            if (strstr(classname_lower, trace_any_contains_lower)) {
+                if (doShowTracer(trace_any.value, distsquared)) {
+                    do_trace = 1;
+                    glColor3f (1,1,1);
+                    if (trace_any_targets.value) {
+                        R_DrawTraceToTargets (ed, pos, true, "target", "targetname", 0);
+                    }
+                    if (trace_any_targetings.value) {
+                        R_DrawTraceToTargets (ed, pos, true, "targetname", "target", 0);
+                    }
+                }
+            }
+            if (strncmp(classname, "func_button", strlen("func_button")) == 0) {
+                eval_t *state = GetEdictFieldValue(ed, "state");
+                if (!state || state->_int != 0) {
+                    if (doShowTracer(trace_buttons.value, distsquared)) {
+                        do_trace = 1;
+                        glColor3f (1,0,1);
+                        if (trace_buttons_targets.value) {
+                            R_DrawTraceToTargets (ed, pos, false, "target", "targetname", 0);
+                        }
+                    }
+                }
+            }
+
+            eval_t *takedamage = GetEdictFieldValue(ed, "takedamage");
+            if (takedamage != NULL && takedamage->_float == 1) {
+                if (doShowTracer(trace_shootables.value, distsquared)) {
+                    do_trace = 1;
+                    glColor3f (0,1,1);
+                    if (trace_shootables_targets.value) {
+                        R_DrawTraceToTargets (ed, pos, false, "target", "targetname", 0);
+                    }
+                }
+            }
+
+            if (do_trace) {
+                glBegin (GL_LINES);
+                glVertex3f (pos[0], pos[1], pos[2]);
+                glVertex3f (org[0], org[1], org[2]);
+                glEnd ();
+                if (trace_edicts_next) {
+                    ED_Print (ed);
+                }
+                if (trace_bboxes.value) {
+                    // copy-pasted from R_ShowBoundingBoxes
+                    if (ed->v.mins[0] == ed->v.maxs[0]
+                        && ed->v.mins[1] == ed->v.maxs[1]
+                        && ed->v.mins[2] == ed->v.maxs[2]) {
+                        R_EmitWirePoint (ed->v.origin);
+                    } else {
+                        VectorAdd (ed->v.mins, ed->v.origin, mins);
+                        VectorAdd (ed->v.maxs, ed->v.origin, maxs);
+                        R_EmitWireBox (mins, maxs);
+                    }
+                }
+            }
+    }
+
+    glColor3f (1,1,1);
+    glEnable (GL_TEXTURE_2D);
+    glEnable (GL_CULL_FACE);
+    glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
+    GL_PolygonOffset (OFFSET_NONE);
+    glEnable (GL_DEPTH_TEST);
+
+    trace_edicts_next = 0;
+}
+
 /*
 ================
 R_RenderScene
@@ -912,6 +1190,8 @@ void R_RenderScene (void)
 	R_ShowTris (); //johnfitz
 
 	R_ShowBoundingBoxes (); //johnfitz
+
+        R_DrawTracers ();
 }
 
 static GLuint r_scaleview_texture;
@@ -1118,4 +1398,3 @@ void R_RenderView (void)
 					rs_dynamiclightmaps);
 	//johnfitz
 }
-

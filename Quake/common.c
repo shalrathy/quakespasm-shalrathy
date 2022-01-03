@@ -1540,7 +1540,7 @@ void COM_WriteFile (const char *filename, const void *data, int len)
 		return;
 	}
 
-	Sys_Printf ("COM_WriteFile: %s\n", name);
+	Sys_Printf ("COM_WriteFile: %s\n", COM_SkipPath(name));
 	Sys_FileWrite (handle, data, len);
 	Sys_FileClose (handle);
 }
@@ -2583,7 +2583,7 @@ void LOC_LoadFile (const char *file)
 		{
 fail:			mz_zip_reader_end(&archive);
 			if (rw) SDL_RWclose(rw);
-			Con_Printf("Couldn't load '%s'\nfrom '%s'\n", file, com_basedir);
+			Con_Printf("Couldn't load '%s'\n", file);
 			return;
 		}
 		SDL_RWread(rw, localization.text, 1, sz);

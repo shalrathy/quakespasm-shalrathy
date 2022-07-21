@@ -47,6 +47,33 @@ Print a M/S in the top-right corner when close to a monster/secret.
 `radar_monsters 1000` show M in top-right corner when a live monster is within 1000 units.
 `radar_scale 10` make the top-right letters 10x as big.
 
+## Speed
+Show stats and change physics to understand and train wall-running, circle jumping, and bunny hopping.
+
+`scr_speed 1` show player speed (current, avg, and max since last standstill)
+`scr_speed 2` also show plot of speed over latest number of seconds
+`scr_speed 3` also show plots of speed increase of different view angles
+`scr_speed 4` also show plot view angle difference away from most speedy view angle over latest number of seconds
+`scr_speed_history 100` change time plots record, 100 is 10 seconds
+`scr_speed_angles 180` change shown view angles in plots, 180 means 180 degrees left and right
+`scr_speed_scale 5` increase size of scr_speed GUI
+`sv_slowmo 2` slow down game, sv_slowmo 2 slows down game 2x
+`sv_bunnyhopqw 1` emulate qw bunny hopping by not applying friction between bunny hops (0 to disable)
+
+### plot 1 speed
+x-axis is time, y-axis is speed. read line on ground, white line when in air.
+### plot 2 speedangle
+x-axis is horizontal view angle (center is 0 degree, left/right is if you looked left/right).
+y-axis is speed gain for the given horizontal view angle.
+This plot view is used in https://www.youtube.com/watch?v=v3zT3Z5apaM
+### plot 3 speedangle at jump
+Same as plot 2. But the plot is only updated at frames where you leave the ground.
+### plot 4 speedangle at land
+Same as plot 2. But the plot is only updated at frames where you land on the ground.
+### plot 5 speedangle goodness
+x-axis is time.
+y-axis is how many degrees away from the angle that would give the most speed.
+
 # Changelog
 
 ## 2021-06-20 quakespasm-0.92.3-shalrathy1
@@ -72,3 +99,6 @@ updated quakespasm base to 0.94.3.
 trace_monsters and radar_monsters shows monsters that have not spawned in yet (SMP and AD mod features).
 added trace_monsters_targetings.
 trace_secrets no longer shows discovered item-pick-up secrets in AD mod.
+
+## 2022-07-21 quakespasm-0.94.3-shalrathy7
+Add speed commands: scr_speed, scr_speed_history, scr_speed_angles, scr_speed_scale, sv_slowmo, sv_bunnyhopqw.

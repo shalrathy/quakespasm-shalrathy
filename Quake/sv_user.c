@@ -31,17 +31,24 @@ extern	cvar_t	sv_stopspeed;
 
 static	vec3_t		forward, right, up;
 
+int rawgametick = 0;
+int gametick = 0;
+
 // world
 float	*angles;
 float	*origin;
 float	*velocity;
 
 qboolean	onground;
+qboolean	prevonground;
+vec3_t velocitybeforethink;
 
 usercmd_t	cmd;
 
 cvar_t	sv_idealpitchscale = {"sv_idealpitchscale","0.8",CVAR_NONE};
 cvar_t	sv_altnoclip = {"sv_altnoclip","1",CVAR_ARCHIVE}; //johnfitz
+cvar_t	sv_slowmo = {"sv_slowmo","1",CVAR_NONE}; //johnfitz
+cvar_t	sv_bunnyhopqw = {"sv_bunnyhopqw","0",CVAR_NONE}; //johnfitz
 
 /*
 ===============
@@ -358,7 +365,8 @@ void SV_AirMove (void)
 	{	// noclip
 		VectorCopy (wishvel, velocity);
 	}
-	else if ( onground )
+        // emulate qw bunny hopping by not applying friction on first landing tick
+	else if ( onground && !(sv_bunnyhopqw.value && !prevonground))
 	{
 		SV_UserFriction ();
 		SV_Accelerate (wishspeed, wishdir);
@@ -384,10 +392,13 @@ void SV_ClientThink (void)
 	if (sv_player->v.movetype == MOVETYPE_NONE)
 		return;
 
+        prevonground = onground;
 	onground = (int)sv_player->v.flags & FL_ONGROUND;
 
 	origin = sv_player->v.origin;
 	velocity = sv_player->v.velocity;
+
+        for(int i=0;i<3;i++) velocitybeforethink[i] = velocity[i];
 
 	DropPunchAngle ();
 
@@ -599,6 +610,9 @@ void SV_RunClients (void)
 {
 	int				i;
 
+        rawgametick++;
+        if (!(rawgametick % (int)sv_slowmo.value)) gametick++;
+
 	for (i=0, host_client = svs.clients ; i<svs.maxclients ; i++, host_client++)
 	{
 		if (!host_client->active)
@@ -618,6 +632,8 @@ void SV_RunClients (void)
 			memset (&host_client->cmd, 0, sizeof(host_client->cmd));
 			continue;
 		}
+
+                if (rawgametick % (int)sv_slowmo.value) continue;
 
 // always pause in single player if in console or menus
 		if (!sv.paused && (svs.maxclients > 1 || key_dest == key_game) )

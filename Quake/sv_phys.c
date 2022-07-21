@@ -1177,6 +1177,10 @@ void SV_Physics (void)
 	int	entity_cap; // For sv_freezenonclients 
 	edict_t	*ent;
 
+        extern int rawgametick;
+        extern cvar_t sv_slowmo;
+        if (rawgametick % (int)sv_slowmo.value) return;
+
 // let the progs know that a new frame has started
 	pr_global_struct->self = EDICT_TO_PROG(sv.edicts);
 	pr_global_struct->other = EDICT_TO_PROG(sv.edicts);

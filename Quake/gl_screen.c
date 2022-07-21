@@ -91,6 +91,11 @@ cvar_t		scr_extendedhud_loads = {"scr_extendedhud_loads", "0", CVAR_NONE};
 cvar_t		radar_monsters = {"radar_monsters", "0", CVAR_NONE};
 cvar_t		radar_secrets = {"radar_secrets", "0", CVAR_NONE};
 cvar_t		radar_scale = {"radar_scale", "1", CVAR_ARCHIVE};
+cvar_t		scr_speed = {"scr_speed", "0", CVAR_ARCHIVE};
+cvar_t		scr_speed_scale = {"scr_speed_scale", "4", CVAR_ARCHIVE};
+cvar_t		scr_speed_history = {"scr_speed_history", "100", CVAR_ARCHIVE};
+cvar_t		scr_speed_angles = {"scr_speed_angles", "180", CVAR_ARCHIVE};
+
 //johnfitz
 
 cvar_t		scr_viewsize = {"viewsize","100", CVAR_ARCHIVE};
@@ -422,6 +427,10 @@ void SCR_Init (void)
         Cvar_RegisterVariable (&radar_monsters);
         Cvar_RegisterVariable (&radar_secrets);
         Cvar_RegisterVariable (&radar_scale);
+        Cvar_RegisterVariable (&scr_speed);
+        Cvar_RegisterVariable (&scr_speed_scale);
+        Cvar_RegisterVariable (&scr_speed_history);
+        Cvar_RegisterVariable (&scr_speed_angles);
 
 	//johnfitz
 	Cvar_SetCallback (&scr_fov, SCR_Callback_refdef);
@@ -805,6 +814,458 @@ void SCR_DrawRadar (void)
     glLoadIdentity ();
 }
 
+// copy-pasted from sv_user.c
+float Get_Wishdir_Speed_Delta(float angle) {
+    extern cvar_t sv_maxspeed;
+    extern cvar_t sv_friction;
+    extern cvar_t sv_edgefriction;
+    extern cvar_t sv_stopspeed;
+    extern cvar_t sv_accelerate;
+    extern usercmd_t cmd;
+    extern vec3_t velocitybeforethink;
+    extern qboolean onground;
+
+        int		i;
+	vec3_t		wishvel, wishdir, velocity, angles, origin, forward, right, up;
+	float		wishspeed, fmove, smove;
+
+        if (angle < -180) angle += 360;
+        if (angle > 180) angle -= 360;
+
+        for (i=0;i<3;i++) angles[i] = sv_player->v.angles[i];
+        angles[1] = angle;
+
+	AngleVectors (angles, forward, right, up);
+
+	fmove = cmd.forwardmove;
+	smove = cmd.sidemove;
+
+// hack to not let you back into teleporter
+	if (sv.time < sv_player->v.teleport_time && fmove < 0)
+		fmove = 0;
+
+	for (i=0 ; i<3 ; i++)
+		wishvel[i] = forward[i]*fmove + right[i]*smove;
+
+	if ( (int)sv_player->v.movetype != MOVETYPE_WALK)
+		wishvel[2] = cmd.upmove;
+	else
+		wishvel[2] = 0;
+
+	VectorCopy (wishvel, wishdir);
+	wishspeed = VectorNormalize(wishdir);
+	if (wishspeed > sv_maxspeed.value)
+	{
+		VectorScale (wishvel, sv_maxspeed.value/ wishspeed, wishvel);
+		wishspeed = sv_maxspeed.value;
+	}
+
+        for (i=0;i<3;i++) velocity[i] = velocitybeforethink[i];
+        for (i=0;i<3;i++) origin[i] = sv_player->v.origin[i];
+
+        float oldspeed = sqrt(velocity[0]*velocity[0] + velocity[1]*velocity[1]);
+
+	if ( sv_player->v.movetype == MOVETYPE_NOCLIP)
+	{	// noclip
+		//VectorCopy (wishvel, velocity);
+	}
+	else if ( onground )
+	{
+            while(1) { // SV_UserFriction ();
+                float	*vel;
+                float	speed, newspeed, control;
+                vec3_t	start, stop;
+                float	friction;
+                trace_t	trace;
+
+                vel = velocity;
+
+                speed = sqrt(vel[0]*vel[0] +vel[1]*vel[1]);
+                if (!speed)
+                    break;
+
+// if the leading edge is over a dropoff, increase friction
+                start[0] = stop[0] = origin[0] + vel[0]/speed*16;
+                start[1] = stop[1] = origin[1] + vel[1]/speed*16;
+                start[2] = origin[2] + sv_player->v.mins[2];
+                stop[2] = start[2] - 34;
+
+                trace = SV_Move (start, vec3_origin, vec3_origin, stop, true, sv_player);
+
+                if (trace.fraction == 1.0)
+                    friction = sv_friction.value*sv_edgefriction.value;
+                else
+                    friction = sv_friction.value;
+
+// apply friction
+                control = speed < sv_stopspeed.value ? sv_stopspeed.value : speed;
+                newspeed = speed - host_frametime*control*friction;
+
+                if (newspeed < 0)
+                    newspeed = 0;
+                newspeed /= speed;
+
+                vel[0] = vel[0] * newspeed;
+                vel[1] = vel[1] * newspeed;
+                vel[2] = vel[2] * newspeed;
+                break;
+            }
+
+            while(1) { // SV_Accelerate (wishspeed, wishdir);
+                int			i;
+                float		addspeed, accelspeed, currentspeed;
+
+                currentspeed = DotProduct (velocity, wishdir);
+                addspeed = wishspeed - currentspeed;
+                if (addspeed <= 0)
+                    break;
+                accelspeed = sv_accelerate.value*host_frametime*wishspeed;
+                if (accelspeed > addspeed)
+                    accelspeed = addspeed;
+
+                for (i=0 ; i<3 ; i++)
+                    velocity[i] += accelspeed*wishdir[i];
+                break;
+            }
+	}
+	else
+	{	// not on ground, so little effect on velocity
+            while(1) { // SV_AirAccelerate (wishspeed, wishvel);
+                int			i;
+                float		addspeed, wishspd, accelspeed, currentspeed;
+
+                wishspd = VectorNormalize (wishvel);
+                if (wishspd > 30)
+                    wishspd = 30;
+                currentspeed = DotProduct (velocity, wishvel);
+                addspeed = wishspd - currentspeed;
+                if (addspeed <= 0)
+                    break;
+                // accelspeed = sv_accelerate.value * host_frametime;
+                accelspeed = sv_accelerate.value*wishspeed * host_frametime;
+                if (accelspeed > addspeed)
+                    accelspeed = addspeed;
+
+                for (i=0 ; i<3 ; i++)
+                    velocity[i] += accelspeed*wishvel[i];
+                break;
+            }
+	}
+        float newspeed = sqrt(velocity[0]*velocity[0] + velocity[1]*velocity[1]);
+        return newspeed - oldspeed;
+}
+void SCR_DrawSpeed_angleplot_setcolor(char color) {
+    switch (color) {
+    case 0: glColor3f(1,1,1); break;
+    case 1: glColor3f(1,0.5,0.5); break;
+    case 2: glColor3f(0.5,0.5,0.5); break;
+    case 3: glColor3f(0.3,0.3,0.6); break;
+    case 4: glColor3f(0.6,0.3,0.3); break;
+    case 5: glColor3f(0.9,0.3,0.3); break;
+    case 6: glColor3f(1,0.1,0.1); break;
+    default: glColor3f(1,0,0); break;
+    }
+}
+void SCR_DrawSpeed_plot(float x, float y, float w, float h,
+                        float *values, int valuesstart, int valuesend, int valueslen,
+                        char *colors,
+                        float *horlines, char *horlinescolors, int horlineslen, char verline) {
+    int valuesshown = 0;
+    float minvalue = 1.0/0.0;
+    float maxvalue = -1.0/0.0;
+    for (int i = 0; i < valueslen; i++) {
+        int index = (valuesstart + i) % valueslen;
+        if (index == valuesend) break;
+        valuesshown++;
+        if (!isfinite(values[index])) continue;
+        if (values[index] > maxvalue) maxvalue = values[index];
+        if (values[index] < minvalue) minvalue = values[index];
+    }
+    if (!isfinite(maxvalue)) maxvalue = 0;
+    if (!isfinite(minvalue)) minvalue = 0;
+    maxvalue++; // non-empty y-axis
+    // show plot max-y and min-y
+    char str[50];
+    sprintf(str, "%.0f", maxvalue - 1 + 0.5);
+    Draw_String(x, y, str);
+    sprintf(str, "%.0f", minvalue + 0.5);
+    Draw_String(x, y+h-8, str);
+
+    glDisable (GL_TEXTURE_2D);
+    // frame
+    glColor3f(1,1,1);
+    glBegin(GL_LINE_STRIP);
+    glVertex2d(x, y);
+    glVertex2d(x+w, y);
+    glVertex2d(x+w, y+h);
+    glVertex2d(x, y+h);
+    glVertex2d(x, y);
+    glEnd();
+
+    h--; // dont overwrite frame
+
+    for (int i = 0; i < horlineslen; i++) {
+        if (horlines[i] > minvalue && horlines[i] < maxvalue) {
+            SCR_DrawSpeed_angleplot_setcolor(horlinescolors[i]);
+            float hy = y + h - h * (horlines[i] - minvalue) / (maxvalue - minvalue);
+            glBegin(GL_LINE_STRIP);
+            glVertex2d(x, hy);
+            glVertex2d(x+w, hy);
+            glEnd();
+        }
+    }
+    if (verline) {
+        SCR_DrawSpeed_angleplot_setcolor(2);
+        glBegin (GL_LINE_STRIP);
+        glVertex2d(x+w/2, y);
+        glVertex2d(x+w/2, y+h);
+        glEnd();
+    }
+
+    SCR_DrawSpeed_angleplot_setcolor(0);
+    glBegin(GL_LINE_STRIP);
+    float px = x;
+    char prevcolor = -1;
+    for (int i = 0; i < valueslen; i++) {
+        int index = (valuesstart + i) % valueslen;
+        if (index == valuesend) break;
+        px += w / valuesshown;
+        float py = y + h - h * (values[index] - minvalue) / (maxvalue - minvalue);
+        if (colors && prevcolor != colors[index]) {
+            prevcolor = colors[index];
+            glVertex2d(px, py);
+            glEnd();
+            SCR_DrawSpeed_angleplot_setcolor(colors[index]);
+            glBegin(GL_LINE_STRIP);
+        }
+        if (!isfinite(py)) continue;
+        if (py < y) py = y;
+        if (py > y+h) py = y+h;
+        glVertex2d(px, py);
+    }
+    glEnd();
+    glEnable(GL_TEXTURE_2D);
+}
+
+// draw speed information
+void SCR_DrawSpeed (void)
+{
+    extern qboolean onground;
+    extern qboolean prevonground;
+    extern int gametick;
+
+    static int historylen = 0;
+    static float *history = NULL;
+    static char *history_onground = NULL;
+    static float *history_angleoffset = NULL;
+    static int historystart = -1;
+    static int historyend = -1;
+    static char onground_seen = 0;
+    static double oldtime = 0;
+    static float prevspeed = 0;
+    static float maxspeed = 0;
+    static int prevgametick = 0;
+
+    if (scr_speed.value <= 0) return;
+
+    if (scr_speed_history.value != historylen) {
+        free(history);
+        free(history_onground);
+        free(history_angleoffset);
+        historylen = scr_speed_history.value;
+        historystart = 0;
+        historyend = 0;
+        history = (float*) malloc(sizeof(float)*historylen);
+        history_onground = (char*) malloc(sizeof(char)*historylen);
+        history_angleoffset = (float*) malloc(sizeof(float)*historylen);
+    }
+
+    // manual GL_SetCanvas to avoid changing multiple files
+    // attach to middle right of screen
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity ();
+    float s = scr_speed_scale.value;
+    glOrtho (0, 100, 200, 0, -99999, 99999);
+    glViewport (glx + (glwidth - 100*s), gly + glheight/2 - 200*s/2, 100*s, 200*s);
+
+    if (onground) onground_seen = 1;
+
+    // current speed
+    float speed = sqrt(cl.velocity[0]*cl.velocity[0] +cl.velocity[1]*cl.velocity[1]);
+    char str[50];
+    sprintf (str, "speed=%.0f", prevspeed+0.5f);
+    Draw_String (0, 0, str);
+
+    // average speed
+    float avgspeed = 0;
+    int avgspeedcount = 0;
+    for (int i = 0; i < historylen; i++) {
+        int index = (historystart + i) % historylen;
+        if (index == historyend) break;
+        avgspeed += history[index];
+        avgspeedcount++;
+    }
+    avgspeed /= avgspeedcount;
+    sprintf (str, "avgspeed=%.0f", avgspeed+0.5f);
+    Draw_String (0, 8, str);
+
+    // max speed since last complete halt
+    if (speed == 0) maxspeed = 0;
+    if (speed > maxspeed) maxspeed = speed;
+    sprintf (str, "maxspeed=%.0f", maxspeed+0.5f);
+    Draw_String (0, 16, str);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity ();
+
+    float cury = 24 + 1;
+    float plotheights = (200 - cury - 5) / 5;
+    if (scr_speed.value >= 2) { // draw histogram of speed over the last bit of time
+        // color of line shows whether player was on ground
+        float x = 1;
+        float y = cury;
+        float w = 99;
+        float h = plotheights;
+        cury+=h+1;
+
+        float horlines[] = { 400, 500, 600, 700 };
+        char horlinescolors[] = { 3, 4, 5, 6 };
+        SCR_DrawSpeed_plot(x, y, w, h,
+                           history, historystart, historyend, historylen,
+                           history_onground,
+                           horlines, horlinescolors, sizeof(horlines)/sizeof(horlines[0]), false);
+    }
+    float bestangle = -1.0/0.0;
+    if (scr_speed.value >= 3 && sv.active) {
+        // show view angles and how much speed they would give
+        // x-axis is speed if angle was more left/right
+        // keep highest part of plot in the center to maximize speed
+
+        int angles = scr_speed_angles.value;
+        int len = angles * 2 + 1;
+
+        static float *angleoffsetspeedsprev = NULL;
+        static int angleoffsetspeedsprevlen = 0;
+        if (angleoffsetspeedsprevlen != len) {
+            free(angleoffsetspeedsprev);
+            angleoffsetspeedsprev = (float*) malloc(sizeof(float)*len);
+            angleoffsetspeedsprevlen = len;
+        }
+
+        float *angleoffsetspeeds = (float*) malloc(sizeof(float)*len);
+        float playerangle = sv_player->v.angles[1];
+        float bestspeed = -1.0/0.0;
+        for (int angle = -angles; angle <= angles; angle++) {
+            float addspeed = Get_Wishdir_Speed_Delta(playerangle + angle);
+            if (addspeed < -20) addspeed = -20;
+            if (addspeed > bestspeed
+                || (addspeed == bestspeed && abs(angle) < abs(bestangle))) {
+                bestspeed = addspeed; bestangle = angle;
+            }
+            angleoffsetspeeds[angles+angle] = addspeed;
+        }
+
+        float horlines[] = { 0 };
+        char horlinescolors[] = { 2 };
+        { // live update plot
+            float x = 1;
+            float y = cury;
+            float w = 99;
+            float h = plotheights;
+            cury += h+1;
+            SCR_DrawSpeed_plot(x, y, w, h,
+                               angleoffsetspeeds, 0, -1, len,
+                               NULL,
+                               horlines, horlinescolors, sizeof(horlines)/sizeof(horlines[0]), true);
+        }
+        { // plot for latest jumping tick
+            static float *angleoffsetspeedsjumping = NULL;
+            static int angleoffsetspeedsjumpinglen = 0;
+            if (angleoffsetspeedsjumpinglen != len) {
+                free(angleoffsetspeedsjumping);
+                angleoffsetspeedsjumping = (float*) malloc(sizeof(float)*len);
+                angleoffsetspeedsjumpinglen = len;
+                for (int i = 0; i < len; i++) angleoffsetspeedsjumping[i] = 0;
+            }
+            if (gametick != prevgametick && !onground && prevonground) {
+                for (int i = 0; i < len; i++) {
+                    angleoffsetspeedsjumping[i] = angleoffsetspeedsprev[i];
+                }
+            }
+
+            float x = 1;
+            float y = cury;
+            float w = 99;
+            float h = plotheights;
+            cury += h+1;
+            SCR_DrawSpeed_plot(x, y, w, h,
+                               angleoffsetspeedsjumping, 0, -1, len,
+                               NULL,
+                               horlines, horlinescolors, sizeof(horlines)/sizeof(horlines[0]), true);
+        }
+        { // plot for latest landing tick
+            static float *angleoffsetspeedslanding = NULL;
+            static int angleoffsetspeedslandinglen = 0;
+            if (angleoffsetspeedslandinglen != len) {
+                free(angleoffsetspeedslanding);
+                angleoffsetspeedslanding = (float*) malloc(sizeof(float)*len);
+                angleoffsetspeedslandinglen = len;
+                for (int i = 0; i < len; i++) angleoffsetspeedslanding[i] = 0;
+            }
+            if (gametick != prevgametick && onground && !prevonground) {
+                for (int i = 0; i < len; i++) {
+                    angleoffsetspeedslanding[i] = angleoffsetspeeds[i];
+                }
+            }
+
+            float x = 1;
+            float y = cury;
+            float w = 99;
+            float h = plotheights;
+            cury += h+1;
+            SCR_DrawSpeed_plot(x, y, w, h,
+                               angleoffsetspeedslanding, 0, -1, len,
+                               NULL,
+                               horlines, horlinescolors, sizeof(horlines)/sizeof(horlines[0]), true);
+        }
+
+        for (int i = 0; i < len; i++) {
+            angleoffsetspeedsprev[i] = angleoffsetspeeds[i];
+        }
+        free(angleoffsetspeeds);
+
+        if (scr_speed.value >= 4) {
+            // histogram over how close the view angle has been to one giving most speed
+            // perfect speed is when this plot is at 0.0
+            float x = 1;
+            float y = cury;
+            float w = 99;
+            float h = plotheights;
+            cury += h+1;
+
+            float horlines[] = { 0 };
+            char horlinescolors[] = { 2 };
+
+            SCR_DrawSpeed_plot(x, y, w, h,
+                               history_angleoffset, historystart, historyend, historylen,
+                               NULL,
+                               horlines, horlinescolors, sizeof(horlines)/sizeof(horlines[0]), false);
+        }
+    }
+
+    if (oldtime < 0 || realtime - oldtime > 0.1) { // 10 readings per second
+        // history of speed
+        history[historyend] = speed;
+        history_onground[historyend] = onground_seen;
+        history_angleoffset[historyend] = bestangle;
+        onground_seen = 0;
+        historyend = (historyend + 1) % historylen;
+        if (historyend == historystart) historystart = (historystart + 1) % historylen;
+        prevspeed = speed;
+        oldtime = realtime;
+    }
+    prevgametick = gametick;
+}
 
 //=============================================================================
 
@@ -1256,6 +1717,7 @@ void SCR_UpdateScreen (void)
 		SCR_DrawClock (); //johnfitz
                 SCR_DrawExtendedHud ();
                 SCR_DrawRadar ();
+                SCR_DrawSpeed ();
 		SCR_DrawConsole ();
 		M_Draw ();
 	}

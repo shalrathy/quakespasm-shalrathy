@@ -1265,7 +1265,8 @@ void SCR_DrawSpeed (void)
         }
     }
 
-    if (oldtime < 0 || realtime - oldtime > 0.1) { // 10 readings per second
+    if (cls.state == ca_connected
+        && (oldtime < 0 || realtime - oldtime > 0.1)) { // 10 readings per second
         // history of speed
         history[historyend] = speed;
         if (history[historyend] < scr_speed_minspeed.value)
@@ -1731,10 +1732,10 @@ void SCR_UpdateScreen (void)
 		SCR_DrawClock (); //johnfitz
                 SCR_DrawExtendedHud ();
                 SCR_DrawRadar ();
-                SCR_DrawSpeed ();
 		SCR_DrawConsole ();
 		M_Draw ();
 	}
+        SCR_DrawSpeed ();
 
 	V_UpdateBlend (); //johnfitz -- V_UpdatePalette cleaned up and renamed
 

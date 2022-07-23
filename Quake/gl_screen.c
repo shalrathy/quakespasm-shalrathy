@@ -95,6 +95,7 @@ cvar_t		scr_speed = {"scr_speed", "0", CVAR_ARCHIVE};
 cvar_t		scr_speed_scale = {"scr_speed_scale", "4", CVAR_ARCHIVE};
 cvar_t		scr_speed_history = {"scr_speed_history", "100", CVAR_ARCHIVE};
 cvar_t		scr_speed_angles = {"scr_speed_angles", "180", CVAR_ARCHIVE};
+cvar_t		scr_speed_minspeed = {"scr_speed_minspeed", "0", CVAR_ARCHIVE};
 
 //johnfitz
 
@@ -431,6 +432,7 @@ void SCR_Init (void)
         Cvar_RegisterVariable (&scr_speed_scale);
         Cvar_RegisterVariable (&scr_speed_history);
         Cvar_RegisterVariable (&scr_speed_angles);
+        Cvar_RegisterVariable (&scr_speed_minspeed);
 
 	//johnfitz
 	Cvar_SetCallback (&scr_fov, SCR_Callback_refdef);
@@ -983,13 +985,18 @@ void SCR_DrawSpeed_plot(float x, float y, float w, float h,
     }
     if (!isfinite(maxvalue)) maxvalue = 0;
     if (!isfinite(minvalue)) minvalue = 0;
-    maxvalue++; // non-empty y-axis
     // show plot max-y and min-y
     char str[50];
     sprintf(str, "%.0f", maxvalue - 1 + 0.5);
     Draw_String(x, y, str);
     sprintf(str, "%.0f", minvalue + 0.5);
     Draw_String(x, y+h-8, str);
+    maxvalue++; // add top-room in plot
+
+    if (verline) {
+        int chars = sprintf(str, "%.0f", values[valueslen/2]);
+        Draw_String(x+w-chars*8, y+h-8, str);
+    }
 
     glDisable (GL_TEXTURE_2D);
     // frame
@@ -1245,7 +1252,6 @@ void SCR_DrawSpeed (void)
 
             float horlines[] = { 0 };
             char horlinescolors[] = { 2 };
-
             SCR_DrawSpeed_plot(x, y, w, h,
                                history_angleoffset, historystart, historyend, historylen,
                                NULL,
@@ -1256,6 +1262,8 @@ void SCR_DrawSpeed (void)
     if (oldtime < 0 || realtime - oldtime > 0.1) { // 10 readings per second
         // history of speed
         history[historyend] = speed;
+        if (history[historyend] < scr_speed_minspeed.value)
+            history[historyend] = scr_speed_minspeed.value;
         history_onground[historyend] = onground_seen;
         history_angleoffset[historyend] = bestangle;
         onground_seen = 0;

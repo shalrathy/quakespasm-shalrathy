@@ -55,6 +55,7 @@ Show stats and change physics to understand and train wall-running, circle jumpi
 `scr_speed 3` also show plots of speed increase of different view angles
 `scr_speed 4` also show plot view angle difference away from most speedy view angle over latest number of seconds
 `scr_speed_history 100` change time plots record, 100 is 10 seconds
+`scr_speed_minspeed 400` set min speed to 400 in the speed time plot
 `scr_speed_angles 180` change shown view angles in plots, 180 means 180 degrees left and right
 `scr_speed_scale 5` increase size of scr_speed GUI
 `sv_slowmo 2` slow down game, sv_slowmo 2 slows down game 2x
@@ -62,9 +63,11 @@ Show stats and change physics to understand and train wall-running, circle jumpi
 
 ### plot 1 speed
 x-axis is time, y-axis is speed. read line on ground, white line when in air.
+number in top-left corner is max value. number in bottom-left corner is min value.
 ### plot 2 speedangle
 x-axis is horizontal view angle (center is 0 degree, left/right is if you looked left/right).
 y-axis is speed gain for the given horizontal view angle.
+Number in bottom-right is speed-increase at current view angle (y-value at the center vertical line).
 This plot view is used in https://www.youtube.com/watch?v=v3zT3Z5apaM
 ### plot 3 speedangle at jump
 Same as plot 2. But the plot is only updated at frames where you leave the ground.
@@ -101,4 +104,5 @@ added trace_monsters_targetings.
 trace_secrets no longer shows discovered item-pick-up secrets in AD mod.
 
 ## 2022-07-21 quakespasm-0.94.3-shalrathy7
-Add speed commands: scr_speed, scr_speed_history, scr_speed_angles, scr_speed_scale, sv_slowmo, sv_bunnyhopqw.
+Add speed commands: scr_speed, scr_speed_history, scr_speed_minspeed, scr_speed_angles,
+scr_speed_scale, sv_slowmo, sv_bunnyhopqw.

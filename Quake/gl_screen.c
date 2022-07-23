@@ -1061,7 +1061,9 @@ void SCR_DrawSpeed (void)
     extern qboolean prevonground;
     extern int gametick;
 
+    static double prevcltime = -1;
     static int historylen = 0;
+    static int historyminspeed = 0;
     static float *history = NULL;
     static char *history_onground = NULL;
     static float *history_angleoffset = NULL;
@@ -1075,17 +1077,21 @@ void SCR_DrawSpeed (void)
 
     if (scr_speed.value <= 0) return;
 
-    if (scr_speed_history.value != historylen) {
+    if (scr_speed_history.value != historylen
+        || scr_speed_minspeed.value != historyminspeed
+        || cl.time < prevcltime) {
         free(history);
         free(history_onground);
         free(history_angleoffset);
         historylen = scr_speed_history.value;
+        historyminspeed = scr_speed_minspeed.value;
         historystart = 0;
         historyend = 0;
         history = (float*) malloc(sizeof(float)*historylen);
         history_onground = (char*) malloc(sizeof(char)*historylen);
         history_angleoffset = (float*) malloc(sizeof(float)*historylen);
     }
+    prevcltime = cl.time;
 
     // manual GL_SetCanvas to avoid changing multiple files
     // attach to middle right of screen

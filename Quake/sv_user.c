@@ -31,7 +31,6 @@ extern	cvar_t	sv_stopspeed;
 
 static	vec3_t		forward, right, up;
 
-int rawgametick = 0;
 int gametick = 0;
 
 // world
@@ -47,8 +46,7 @@ usercmd_t	cmd;
 
 cvar_t	sv_idealpitchscale = {"sv_idealpitchscale","0.8",CVAR_NONE};
 cvar_t	sv_altnoclip = {"sv_altnoclip","1",CVAR_ARCHIVE}; //johnfitz
-cvar_t	sv_slowmo = {"sv_slowmo","1",CVAR_NONE}; //johnfitz
-cvar_t	sv_bunnyhopqw = {"sv_bunnyhopqw","0",CVAR_NONE}; //johnfitz
+cvar_t	sv_bunnyhopqw = {"sv_bunnyhopqw","0",CVAR_NONE};
 
 /*
 ===============
@@ -610,8 +608,7 @@ void SV_RunClients (void)
 {
 	int				i;
 
-        rawgametick++;
-        if (!(rawgametick % (int)sv_slowmo.value)) gametick++;
+        gametick++;
 
 	for (i=0, host_client = svs.clients ; i<svs.maxclients ; i++, host_client++)
 	{
@@ -632,8 +629,6 @@ void SV_RunClients (void)
 			memset (&host_client->cmd, 0, sizeof(host_client->cmd));
 			continue;
 		}
-
-                if (rawgametick % (int)sv_slowmo.value) continue;
 
 // always pause in single player if in console or menus
 		if (!sv.paused && (svs.maxclients > 1 || key_dest == key_game) )

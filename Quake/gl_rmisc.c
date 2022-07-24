@@ -261,6 +261,14 @@ void R_Init (void)
 	Cvar_RegisterVariable (&trace_any_targetings);
 	Cvar_RegisterVariable (&trace_bboxes);
         Cmd_AddCommand ("trace_edicts", R_TraceEdicts);
+        extern void R_TraceSelectClear (void);
+        Cmd_AddCommand ("trace_select_clear", R_TraceSelectClear);
+        extern void R_TraceSelectAdd (void);
+        Cmd_AddCommand ("trace_select_add", R_TraceSelectAdd);
+        extern void R_TraceSelectTargets (void);
+        Cmd_AddCommand ("trace_select_targets", R_TraceSelectTargets);
+        extern void R_TraceSelectTargetings (void);
+        Cmd_AddCommand ("trace_select_targetings", R_TraceSelectTargetings);
 
 	R_InitParticles ();
 	R_SetClearColor_f (&r_clearcolor); //johnfitz

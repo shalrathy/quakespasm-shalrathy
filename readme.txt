@@ -57,9 +57,9 @@ Show stats and change physics to understand and train wall-running, circle jumpi
 `scr_speed_history 100` change time plots record, 100 is 10 seconds
 `scr_speed_minspeed 400` set min speed to 400 in the speed time plot
 `scr_speed_angles 180` change shown view angles in plots, 180 means 180 degrees left and right
-`scr_speed_scale 5` increase size of scr_speed GUI
-`sv_slowmo 2` slow down game, sv_slowmo 2 slows down game 2x
+`scr_speed_scale 5` increase size of scr_speed text and plots
 `sv_bunnyhopqw 1` emulate qw bunny hopping by not applying friction between bunny hops (0 to disable)
+`host_framerate 0.01` slow down game. lower numbers slows game down more
 
 ### plot 1 speed
 x-axis is time, y-axis is speed. read line on ground, white line when in air.

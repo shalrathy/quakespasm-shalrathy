@@ -916,6 +916,77 @@ void R_TraceEdicts (void)
     trace_edicts_next = 1;
 }
 
+static edict_t *traceSelectEdicts[100];
+static int traceSelectEdictsI = 0;
+static qboolean traceSelectEdictsAddNext = false;
+void R_TraceSelectClean (void) {
+    int selectEdictsToRemove = 0;
+    for (int j = 0; j < traceSelectEdictsI; j++) {
+        qboolean isValidEdict = false;
+        int i;
+        edict_t *ed_target;
+        for (i=0, ed_target=NEXT_EDICT(sv.edicts) ; i<sv.num_edicts ; i++, ed_target=NEXT_EDICT(ed_target)) {
+            if (ed_target == traceSelectEdicts[j]) {
+                isValidEdict = true; break;
+            }
+        }
+        if (!isValidEdict) selectEdictsToRemove++;
+        traceSelectEdicts[j] = traceSelectEdicts[j + selectEdictsToRemove];
+    }
+    traceSelectEdictsI -= selectEdictsToRemove;
+}
+void R_TraceSelectClear (void) {
+      traceSelectEdictsI = 0;
+}
+void R_TraceSelectAdd (void) {
+    traceSelectEdictsAddNext = true;
+}
+void R_TraceSelectAddEdict(edict_t *ed) {
+    for (int j = 0; j < traceSelectEdictsI; j++) {
+        if (traceSelectEdicts[j] == ed) return;
+    }
+    if (traceSelectEdictsI >= sizeof(traceSelectEdicts)/sizeof(traceSelectEdicts[0])) return;
+    traceSelectEdicts[traceSelectEdictsI++] = ed;
+}
+void R_TraceSelectAddEdicts (edict_t *ed, const char *edict_field_target, const char *edict_field_targetname) {
+    eval_t *target = GetEdictFieldValue(ed, edict_field_target);
+    if (target && strlen(PR_GetString(target->string)) >= 1) {
+        const char *target_string = PR_GetString(target->string);
+        int i;
+        edict_t *ed_target;
+        for (i=0, ed_target=NEXT_EDICT(sv.edicts) ; i<sv.num_edicts ; i++, ed_target=NEXT_EDICT(ed_target))
+        {
+            if (ed_target->free) continue;
+            eval_t *ed_target_targetname = GetEdictFieldValue(ed_target, edict_field_targetname);
+            if (ed_target_targetname) {
+                if (strcmp(target_string, PR_GetString(ed_target_targetname->string)) == 0) {
+                    R_TraceSelectAddEdict(ed_target);
+                }
+            }
+        }
+    }
+}
+void R_TraceSelectTargets (void) {
+    for (int i = 0; i < traceSelectEdictsI; i++) {
+        if (traceSelectEdicts[i]->free) continue;
+        edict_t *ed = traceSelectEdicts[i];
+        R_TraceSelectAddEdicts(ed, "target", "targetname");
+        R_TraceSelectAddEdicts(ed, "target2", "targetname");
+        R_TraceSelectAddEdicts(ed, "target3", "targetname");
+        R_TraceSelectAddEdicts(ed, "target4", "targetname");
+    }
+}
+void R_TraceSelectTargetings (void) {
+    for (int i = 0; i < traceSelectEdictsI; i++) {
+        if (traceSelectEdicts[i]->free) continue;
+        edict_t *ed = traceSelectEdicts[i];
+        R_TraceSelectAddEdicts(ed, "targetname", "target");
+        R_TraceSelectAddEdicts(ed, "targetname", "target2");
+        R_TraceSelectAddEdicts(ed, "targetname", "target3");
+        R_TraceSelectAddEdicts(ed, "targetname", "target4");
+    }
+}
+
 void R_DrawTraceToTargetsRec (edict_t *ed, vec3_t pos, char tracetriggers,
                            const char *edict_field_target, const char *edict_field_targetname,
                            int calldepth) {
@@ -935,6 +1006,9 @@ void R_DrawTraceToTargetsRec (edict_t *ed, vec3_t pos, char tracetriggers,
                     if (trace_edicts_next) {
                         // might print edicts multiple times, and crash if too many tracers
                         ED_Print (ed_target);
+                    }
+                    if (traceSelectEdictsAddNext) {
+                        R_TraceSelectAddEdict(ed_target);
                     }
                     if (trace_bboxes.value) {
                         // copy-pasted from R_ShowBoundingBoxes
@@ -992,10 +1066,12 @@ void R_DrawTracers (void)
 {
     if (!trace_monsters.value && !trace_secrets.value && !trace_shootables.value
         && !trace_moving.value && !trace_buttons.value && !trace_items.value
-        && !trace_any.value) {
+        && !trace_any.value && traceSelectEdictsI == 0) {
         return;
     }
 
+    R_TraceSelectClean();
+    
     glDisable (GL_DEPTH_TEST);
     glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
     GL_PolygonOffset (OFFSET_SHOWTRIS);
@@ -1121,6 +1197,14 @@ void R_DrawTracers (void)
                 }
             }
 
+            for (int j = 0; j < traceSelectEdictsI; j++) {
+                if (ed == traceSelectEdicts[j]) {
+                    do_trace = 1;
+                    glColor3f (0.8,0.8,0.8);
+                    break;
+                }
+            }
+
             if (do_trace) {
                 glBegin (GL_LINES);
                 glVertex3f (pos[0], pos[1], pos[2]);
@@ -1128,6 +1212,9 @@ void R_DrawTracers (void)
                 glEnd ();
                 if (trace_edicts_next) {
                     ED_Print (ed);
+                }
+                if (traceSelectEdictsAddNext) {
+                    R_TraceSelectAddEdict(ed);
                 }
                 if (trace_bboxes.value) {
                     // copy-pasted from R_ShowBoundingBoxes
@@ -1152,6 +1239,7 @@ void R_DrawTracers (void)
     glEnable (GL_DEPTH_TEST);
 
     trace_edicts_next = 0;
+    traceSelectEdictsAddNext = false;
 }
 
 /*

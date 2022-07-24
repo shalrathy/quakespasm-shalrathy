@@ -31,6 +31,10 @@ Draw lines highlighting various things in maps. Cheats for finding secrets.
 `trace_any_contains key2` show lines to gold keys.
 `trace_any_targets 1` show lines to edicts targeted from edicts matching `trace_any_contains`.
 `trace_any_targetings 1` show lines to edicts targeting to edicts matching `trace_any_contains`.
+`trace_select_add` select currently traced edicts. Selected edicts are always shown.
+`trace_select_clear` unselect all selected edicts.
+`trace_select_targets` expand selected edicts to include targets of selected edicts.
+`trace_select_targetings` expand selected edicts to include edicts targeting a selected edicts.
 `trace_edicts` prints `edicts` for edicts being traced.
 `trace_bboxes 1` show r_showbboxes for traced edicts.
 
@@ -61,21 +65,7 @@ Show stats and change physics to understand and train wall-running, circle jumpi
 `sv_bunnyhopqw 1` emulate qw bunny hopping by not applying friction between bunny hops (0 to disable)
 `host_framerate 0.01` slow down game. lower numbers slows game down more
 
-### plot 1 speed
-x-axis is time, y-axis is speed. read line on ground, white line when in air.
-number in top-left corner is max value. number in bottom-left corner is min value.
-### plot 2 speedangle
-x-axis is horizontal view angle (center is 0 degree, left/right is if you looked left/right).
-y-axis is speed gain for the given horizontal view angle.
-Number in bottom-right is speed-increase at current view angle (y-value at the center vertical line).
-This plot view is used in https://www.youtube.com/watch?v=v3zT3Z5apaM
-### plot 3 speedangle at jump
-Same as plot 2. But the plot is only updated at frames where you leave the ground.
-### plot 4 speedangle at land
-Same as plot 2. But the plot is only updated at frames where you land on the ground.
-### plot 5 speedangle goodness
-x-axis is time.
-y-axis is how many degrees away from the angle that would give the most speed.
+Guide on how to use speed visuals at http://shalrathy.github.io/quake-movement-speed-training/quake-movement-speed-training.html
 
 # Changelog
 
@@ -103,6 +93,7 @@ trace_monsters and radar_monsters shows monsters that have not spawned in yet (S
 added trace_monsters_targetings.
 trace_secrets no longer shows discovered item-pick-up secrets in AD mod.
 
-## 2022-07-21 quakespasm-0.94.3-shalrathy7
+## 2022-07-24 quakespasm-0.94.3-shalrathy7
 Add speed commands: scr_speed, scr_speed_history, scr_speed_minspeed, scr_speed_angles,
 scr_speed_scale, sv_slowmo, sv_bunnyhopqw.
+Add trace_select commands: trace_select_add, trace_select_clear, trace_select_targets, trace_select_targetings.

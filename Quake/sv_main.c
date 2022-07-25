@@ -88,6 +88,9 @@ void SV_Init (void)
 	extern	cvar_t	sv_aim;
 	extern	cvar_t	sv_altnoclip; //johnfitz
 	extern	cvar_t	sv_bunnyhopqw;
+	extern	cvar_t	sv_speedhelppower;
+	extern	cvar_t	sv_speedhelpbunny;
+	extern	cvar_t	sv_speedhelpview;
 
 	sv.edicts = NULL; // ericw -- sv.edicts switched to use malloc()
 
@@ -107,6 +110,9 @@ void SV_Init (void)
 	Cvar_RegisterVariable (&sv_freezenonclients);
 	Cvar_RegisterVariable (&sv_altnoclip); //johnfitz
 	Cvar_RegisterVariable (&sv_bunnyhopqw);
+	Cvar_RegisterVariable (&sv_speedhelppower);
+	Cvar_RegisterVariable (&sv_speedhelpbunny);
+	Cvar_RegisterVariable (&sv_speedhelpview);
 
 	Cmd_AddCommand ("sv_protocol", &SV_Protocol_f); //johnfitz
 

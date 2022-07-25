@@ -58,14 +58,21 @@ Show stats and change physics to understand and train wall-running, circle jumpi
 `scr_speed 2` also show plot of speed over latest number of seconds
 `scr_speed 3` also show plots of speed increase of different view angles
 `scr_speed 4` also show plot view angle difference away from most speedy view angle over latest number of seconds
-`scr_speed_history 100` change time plots record, 100 is 10 seconds
-`scr_speed_minspeed 400` set min speed to 400 in the speed time plot
-`scr_speed_angles 180` change shown view angles in plots, 180 means 180 degrees left and right
 `scr_speed_scale 5` increase size of scr_speed text and plots
+`scr_speed_history 100` change time plots record, 100 is 10 seconds
+`scr_speed_angles 180` change shown view angles in plots, 180 means 180 degrees left and right
+`scr_speed_minspeed 400` set min speed to 400 in the speed time plot (default "no" uses min of y values)
+`scr_speed_maxspeed 700` set max speed to 700 in the speed time plot (default "no" uses max of y values)
+`scr_speed_scale_minspeed -5` setmin speed to -5 in the angle plots (default "no" uses min of y values)
+`scr_speed_scale_maxspeed 20` setmin speed to 20 in the angle plots (default "no" uses max of y values)
 `sv_bunnyhopqw 1` emulate qw bunny hopping by not applying friction between bunny hops (0 to disable)
+`sv_speedhelppower 1` set angle giving best speed when landing (`sv_speedhelppower 10` only changes angle up to 10 degrees)
+`sv_speedhelpbunny 1` set angle giving best speed when in the air (`sv_speedhelpbunny 10` only changes angle up to 10 degrees)
+`sv_speedhelpview 0` dont update visual angle when updating speed help angles
 `host_framerate 0.01` slow down game. lower numbers slows game down more
 
-Guide on how to use speed visuals at http://shalrathy.github.io/quake-movement-speed-training/quake-movement-speed-training.html
+Guide on how to use speed visuals at
+http://shalrathy.github.io/quake-movement-speed-training/quake-movement-speed-training.html
 
 # Changelog
 
@@ -97,3 +104,7 @@ trace_secrets no longer shows discovered item-pick-up secrets in AD mod.
 Add speed commands: scr_speed, scr_speed_history, scr_speed_minspeed, scr_speed_angles,
 scr_speed_scale, sv_slowmo, sv_bunnyhopqw.
 Add trace_select commands: trace_select_add, trace_select_clear, trace_select_targets, trace_select_targetings.
+
+## 2022-07-25 quakespasm-0.94.3-shalrathy8
+Add speed commands: scr_speed_maxspeed, scr_speed_scale_minspeed,
+scr_speed_scale_maxspeed, sv_speedhelppower, sv_speedhelpbunny, sv_speedhelpview.

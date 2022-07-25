@@ -95,7 +95,10 @@ cvar_t		scr_speed = {"scr_speed", "0", CVAR_ARCHIVE};
 cvar_t		scr_speed_scale = {"scr_speed_scale", "4", CVAR_ARCHIVE};
 cvar_t		scr_speed_history = {"scr_speed_history", "100", CVAR_ARCHIVE};
 cvar_t		scr_speed_angles = {"scr_speed_angles", "180", CVAR_ARCHIVE};
-cvar_t		scr_speed_minspeed = {"scr_speed_minspeed", "0", CVAR_ARCHIVE};
+cvar_t		scr_speed_minspeed = {"scr_speed_minspeed", "no", CVAR_ARCHIVE};
+cvar_t		scr_speed_maxspeed = {"scr_speed_maxspeed", "no", CVAR_ARCHIVE};
+cvar_t		scr_speed_scale_minspeed = {"scr_speed_scale_minspeed", "no", CVAR_ARCHIVE};
+cvar_t		scr_speed_scale_maxspeed = {"scr_speed_scale_maxspeed", "no", CVAR_ARCHIVE};
 
 //johnfitz
 cvar_t		scr_usekfont = {"scr_usekfont", "0", CVAR_NONE}; // 2021 re-release
@@ -431,6 +434,9 @@ void SCR_Init (void)
         Cvar_RegisterVariable (&scr_speed_history);
         Cvar_RegisterVariable (&scr_speed_angles);
         Cvar_RegisterVariable (&scr_speed_minspeed);
+        Cvar_RegisterVariable (&scr_speed_maxspeed);
+        Cvar_RegisterVariable (&scr_speed_scale_minspeed);
+        Cvar_RegisterVariable (&scr_speed_scale_maxspeed);
 
 	//johnfitz
 	Cvar_RegisterVariable (&scr_usekfont); // 2021 re-release
@@ -949,6 +955,7 @@ void SCR_DrawSpeed_angleplot_setcolor(char color) {
     }
 }
 void SCR_DrawSpeed_plot(float x, float y, float w, float h,
+                        float setminvalue, float setmaxvalue,
                         float *values, int valuesstart, int valuesend, int valueslen,
                         char *colors,
                         float *horlines, char *horlinescolors, int horlineslen, char verline) {
@@ -963,15 +970,17 @@ void SCR_DrawSpeed_plot(float x, float y, float w, float h,
         if (values[index] > maxvalue) maxvalue = values[index];
         if (values[index] < minvalue) minvalue = values[index];
     }
+    maxvalue++; // add top-room in plot
     if (!isfinite(maxvalue)) maxvalue = 0;
     if (!isfinite(minvalue)) minvalue = 0;
+    if (isfinite(setminvalue)) minvalue = setminvalue;
+    if (isfinite(setmaxvalue)) maxvalue = setmaxvalue;
     // show plot max-y and min-y
     char str[50];
     sprintf(str, "%.0f", maxvalue - 1 + 0.5);
     Draw_String(x, y, str);
     sprintf(str, "%.0f", minvalue + 0.5);
     Draw_String(x, y+h-8, str);
-    maxvalue++; // add top-room in plot
 
     if (verline) {
         int chars = sprintf(str, "%.0f", values[valueslen/2]);
@@ -1020,6 +1029,8 @@ void SCR_DrawSpeed_plot(float x, float y, float w, float h,
         float py = y + h - h * (values[index] - minvalue) / (maxvalue - minvalue);
         if (colors && prevcolor != colors[index]) {
             prevcolor = colors[index];
+            if (py < y) py = y;
+            if (py > y+h) py = y+h;
             glVertex2d(px, py);
             glEnd();
             SCR_DrawSpeed_angleplot_setcolor(colors[index]);
@@ -1033,7 +1044,12 @@ void SCR_DrawSpeed_plot(float x, float y, float w, float h,
     glEnd();
     glEnable(GL_TEXTURE_2D);
 }
-
+float getValueOrNan(cvar_t cvar) {
+    if (isdigit(cvar.string[0]) || cvar.string[0] == '-')
+        return cvar.value;
+    else
+        return 0.0/0.0;
+}
 // draw speed information
 void SCR_DrawSpeed (void)
 {
@@ -1124,6 +1140,7 @@ void SCR_DrawSpeed (void)
         float horlines[] = { 400, 500, 600, 700 };
         char horlinescolors[] = { 3, 4, 5, 6 };
         SCR_DrawSpeed_plot(x, y, w, h,
+                           getValueOrNan(scr_speed_minspeed), getValueOrNan(scr_speed_maxspeed), 
                            history, historystart, historyend, historylen,
                            history_onground,
                            horlines, horlinescolors, sizeof(horlines)/sizeof(horlines[0]), false);
@@ -1167,6 +1184,7 @@ void SCR_DrawSpeed (void)
             float h = plotheights;
             cury += h+1;
             SCR_DrawSpeed_plot(x, y, w, h,
+                               getValueOrNan(scr_speed_scale_minspeed), getValueOrNan(scr_speed_scale_maxspeed),
                                angleoffsetspeeds, 0, -1, len,
                                NULL,
                                horlines, horlinescolors, sizeof(horlines)/sizeof(horlines[0]), true);
@@ -1192,6 +1210,7 @@ void SCR_DrawSpeed (void)
             float h = plotheights;
             cury += h+1;
             SCR_DrawSpeed_plot(x, y, w, h,
+                               getValueOrNan(scr_speed_scale_minspeed), getValueOrNan(scr_speed_scale_maxspeed),
                                angleoffsetspeedsjumping, 0, -1, len,
                                NULL,
                                horlines, horlinescolors, sizeof(horlines)/sizeof(horlines[0]), true);
@@ -1217,6 +1236,7 @@ void SCR_DrawSpeed (void)
             float h = plotheights;
             cury += h+1;
             SCR_DrawSpeed_plot(x, y, w, h,
+                               getValueOrNan(scr_speed_scale_minspeed), getValueOrNan(scr_speed_scale_maxspeed),
                                angleoffsetspeedslanding, 0, -1, len,
                                NULL,
                                horlines, horlinescolors, sizeof(horlines)/sizeof(horlines[0]), true);
@@ -1239,6 +1259,7 @@ void SCR_DrawSpeed (void)
             float horlines[] = { 0 };
             char horlinescolors[] = { 2 };
             SCR_DrawSpeed_plot(x, y, w, h,
+                               0.0/0.0, 0.0/0.0,
                                history_angleoffset, historystart, historyend, historylen,
                                NULL,
                                horlines, horlinescolors, sizeof(horlines)/sizeof(horlines[0]), false);

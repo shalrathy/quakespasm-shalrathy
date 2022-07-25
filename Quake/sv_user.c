@@ -47,6 +47,9 @@ usercmd_t	cmd;
 cvar_t	sv_idealpitchscale = {"sv_idealpitchscale","0.8",CVAR_NONE};
 cvar_t	sv_altnoclip = {"sv_altnoclip","1",CVAR_ARCHIVE}; //johnfitz
 cvar_t	sv_bunnyhopqw = {"sv_bunnyhopqw","0",CVAR_NONE};
+cvar_t	sv_speedhelppower = {"sv_speedhelppower","0",CVAR_NONE};
+cvar_t	sv_speedhelpbunny = {"sv_speedhelpbunny","0",CVAR_NONE};
+cvar_t	sv_speedhelpview = {"sv_speedhelpview","1",CVAR_NONE};
 
 /*
 ===============
@@ -329,6 +332,51 @@ SV_AirMove
 */
 void SV_AirMove (void)
 {
+
+    float curspeed = sqrt(velocity[0]*velocity[0]+velocity[1]*velocity[1]);
+    if (curspeed > 300 &
+        ((sv_speedhelppower.value && onground && !prevonground)
+         || (sv_speedhelpbunny.value && !onground))) {
+        extern float Get_Wishdir_Speed_Delta(float angle);
+        // find best angle
+        float maxhelpangle = 45;
+        if (onground && !prevonground) {
+            maxhelpangle = 45;
+            if (sv_speedhelppower.value > 1) maxhelpangle = sv_speedhelppower.value;
+        }
+        if (!onground) {
+            maxhelpangle = 20;
+            if (sv_speedhelpbunny.value > 1) maxhelpangle = sv_speedhelpbunny.value;
+        }
+        float bestangle = sv_player->v.angles[1];
+        float bestspeed = Get_Wishdir_Speed_Delta(bestangle);
+        for (int da = 1; da < maxhelpangle; da++) {
+            for (int neg = -1; neg <= 1; neg+=2) {
+                float angle = sv_player->v.angles[1] + da*neg;
+                float speed = Get_Wishdir_Speed_Delta(angle);
+                if (speed > bestspeed) {
+                    bestspeed = speed;
+                    bestangle = angle;
+                }
+            }
+        }
+        // fine-tune best angle
+        for (int tune = 0; tune < 1000; tune++) {
+            for (int neg = -1; neg <= 1; neg+=2) {
+                float angle = bestangle + 0.001*neg;
+                float speed = Get_Wishdir_Speed_Delta(angle);
+                if (speed > bestspeed) {
+                    bestspeed = speed;
+                    bestangle = angle;
+                }
+            }
+        }
+        // update best angle (not visually)
+        sv_player->v.angles[1] = bestangle;
+        if (sv_speedhelpview.value)
+          cl.viewangles[1] = bestangle;
+    }
+
 	int			i;
 	vec3_t		wishvel, wishdir;
 	float		wishspeed;

@@ -1050,9 +1050,89 @@ float getValueOrNan(cvar_t cvar) {
     else
         return 0.0/0.0;
 }
+void SCR_DrawSpeedHelp(void) {
+    // draw speed info for each jump
+    if ((int)scr_speed.value / 100 != 1) return;
+    const char *fmt = "%3.0f %c %3.0f = %3.0f (%c%3.0f)";
+    char str[100];
+    int fmtlen = 1 + sprintf(str, fmt, 0, '+', 0, 0, '+', 0);
+    int rows = 10;
+
+    float s = scr_speed_scale.value;
+    int w = fmtlen*8;
+    int h = rows*8;
+
+    extern int gametick;
+    extern qboolean onground;
+    extern qboolean prevonground;
+    extern usercmd_t cmd;
+
+    static qboolean prevprevonground;
+    static float prevspeed = 0;
+    static float airspeedsum = 0;
+    static char *hist = NULL;
+    static double *histtimeout = NULL;
+    static int histrow = 0;
+    static int prevgametick = 0;
+    static double prevcltime = -1;
+
+    if (!hist) {
+        hist = (char*) malloc(sizeof(char)*fmtlen*rows);
+        for (int i = 0; i < fmtlen*rows; i++) hist[i] = 0;
+        histtimeout = (double*) malloc(sizeof(double)*rows);
+    }
+
+    if (!sv.active || cl.time < prevcltime) {
+        for (int i = 0; i < rows; i++) histtimeout[i] = 0.0;
+        prevcltime = cl.time;
+        return;
+    }
+    prevcltime = cl.time;
+
+    if (gametick != prevgametick) {
+        prevgametick = gametick;
+        if (!onground) {
+            airspeedsum += Get_Wishdir_Speed_Delta(sv_player->v.angles[1]);
+        }
+        float speed = sqrt(cl.velocity[0]*cl.velocity[0]+cl.velocity[1]*cl.velocity[1]);
+        if ((onground && !prevonground) || (!onground && prevonground && prevprevonground)) {
+            float addspeed = Get_Wishdir_Speed_Delta(sv_player->v.angles[1]);
+            sprintf(str, fmt,
+                    airspeedsum,
+                    addspeed >= 0 ? '+' : '-', fabs(addspeed),
+                    fmin(999.0, speed),
+                    speed-prevspeed >= 0 ? '+' : '-', fmin(999.0, fabs(speed-prevspeed)));
+            for (int i = 0; i < fmtlen; i++) {
+                hist[histrow*fmtlen + i] = str[i];
+            }
+            histtimeout[histrow] = realtime + scr_speed_history.value/10;
+            histrow = (histrow+1) % rows;
+            prevspeed = speed;
+            airspeedsum = 0;
+        }
+        if (speed < 1) prevspeed = 0;
+        prevprevonground = prevonground;
+    }
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0, w, h, 0, -99999, 99999);
+    glViewport(glx + glwidth/2 - w*s/2, gly + glheight/2 - h*s, w*s, h*s);
+
+    for (int i = 0; i < rows; i++) {
+        int row = histrow - 1 - i;
+        if (row < 0) row += rows;
+        if (realtime <= histtimeout[row])
+            Draw_String(0, i*8, hist + row*fmtlen);
+    }
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity ();
+}
 // draw speed information
 void SCR_DrawSpeed (void)
 {
+    SCR_DrawSpeedHelp();
     extern qboolean onground;
     extern qboolean prevonground;
     extern int gametick;
@@ -1071,7 +1151,7 @@ void SCR_DrawSpeed (void)
     static float maxspeed = 0;
     static int prevgametick = 0;
 
-    if (scr_speed.value <= 0) return;
+    if ((int)scr_speed.value % 100 <= 0) return;
 
     if (scr_speed_history.value != historylen
         || scr_speed_minspeed.value != historyminspeed
@@ -1129,7 +1209,7 @@ void SCR_DrawSpeed (void)
 
     float cury = 24 + 1;
     float plotheights = (200 - cury - 5) / 5;
-    if (scr_speed.value >= 2) { // draw histogram of speed over the last bit of time
+    if ((int)scr_speed.value % 100 >= 2) { // draw histogram of speed over the last bit of time
         // color of line shows whether player was on ground
         float x = 1;
         float y = cury;
@@ -1146,7 +1226,7 @@ void SCR_DrawSpeed (void)
                            horlines, horlinescolors, sizeof(horlines)/sizeof(horlines[0]), false);
     }
     float bestangle = -1.0/0.0;
-    if (scr_speed.value >= 3 && sv.active) {
+    if ((int)scr_speed.value % 100 >= 3 && sv.active) {
         // show view angles and how much speed they would give
         // x-axis is speed if angle was more left/right
         // keep highest part of plot in the center to maximize speed
@@ -1247,7 +1327,7 @@ void SCR_DrawSpeed (void)
         }
         free(angleoffsetspeeds);
 
-        if (scr_speed.value >= 4) {
+        if ((int)scr_speed.value % 100 >= 4) {
             // histogram over how close the view angle has been to one giving most speed
             // perfect speed is when this plot is at 0.0
             float x = 1;

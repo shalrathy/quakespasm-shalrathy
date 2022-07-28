@@ -1054,7 +1054,7 @@ void SCR_DrawSpeedHelp(void) {
     // draw speed info for each jump
     if (!sv.active && !cls.demoplayback) return;
     if ((int)scr_speed.value / 100 != 1) return;
-    const char *fmt = "%c%c %3.0f %c %3.0f = %3.0f, %c%3.0f %2.0f%%";
+    const char *fmt = "%c%c %3.0f %c %3.0f = %3.0f %c%3.0f %2.0f%%";
     char str[100];
     int fmtlen = 1 + sprintf(str, fmt, ' ', ' ', 0.0, '+', 0.0, 0.0, '+', 0.0, 0.0);
     int rows = 10;

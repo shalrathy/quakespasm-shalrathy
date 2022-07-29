@@ -69,6 +69,7 @@ Show stats and change physics to understand and train wall-running, circle jumpi
       30%  This jump increased speed 30% of what was maximum possible with perfect view angles at every frame
     A new line of text is added every jump. Text lines disappear after scr_speed_history/10 seconds.
 `scr_speed 24` add extra value to jump info text showing view angle degrees away from best speed on ground.
+`scr_speed_rows 3` only show 3 jump info lines.
 `scr_speed_scale 5` increase size of scr_speed text and plots
 `scr_speed_history 100` change time plots record, 100 is 10 seconds
 `scr_speed_angles 180` change shown view angles in plots, 180 means 180 degrees left and right
@@ -118,5 +119,5 @@ Add trace_select commands: trace_select_add, trace_select_clear, trace_select_ta
 
 ## 2022-07-27 quakespasm-0.94.3-shalrathy8
 Add speed commands: scr_speed_maxspeed, scr_speed_scale_minspeed,
-scr_speed_scale_maxspeed, sv_speedhelppower, sv_speedhelpbunny, sv_speedhelpview. Added
+scr_speed_scale_maxspeed, sv_speedhelppower, sv_speedhelpbunny, sv_speedhelpview, scr_speed_rows. Added
 speed jump info lines.

@@ -99,6 +99,7 @@ cvar_t		scr_speed_minspeed = {"scr_speed_minspeed", "no", CVAR_ARCHIVE};
 cvar_t		scr_speed_maxspeed = {"scr_speed_maxspeed", "no", CVAR_ARCHIVE};
 cvar_t		scr_speed_scale_minspeed = {"scr_speed_scale_minspeed", "no", CVAR_ARCHIVE};
 cvar_t		scr_speed_scale_maxspeed = {"scr_speed_scale_maxspeed", "no", CVAR_ARCHIVE};
+cvar_t		scr_speed_rows = {"scr_speed_rows", "10", CVAR_ARCHIVE};
 
 //johnfitz
 cvar_t		scr_usekfont = {"scr_usekfont", "0", CVAR_NONE}; // 2021 re-release
@@ -437,6 +438,7 @@ void SCR_Init (void)
         Cvar_RegisterVariable (&scr_speed_maxspeed);
         Cvar_RegisterVariable (&scr_speed_scale_minspeed);
         Cvar_RegisterVariable (&scr_speed_scale_maxspeed);
+        Cvar_RegisterVariable (&scr_speed_rows);
 
 	//johnfitz
 	Cvar_RegisterVariable (&scr_usekfont); // 2021 re-release
@@ -1060,9 +1062,11 @@ void SCR_DrawSpeedHelp(void) {
     const char *fmt = "%c%c %3.0f %c %3.0f = %3.0f %c%3.0f %2.0f%% %3s";
     char str[100];
     int fmtlen = 1 + sprintf(str, fmt, ' ', ' ', 0.0, '+', 0.0, 0.0, '+', 0.0, 0.0, "");
-    int rows = 10;
+    int rows = (int) scr_speed_rows.value;
+    if (rows <= 0) return;
+    if (rows > 100) rows = 100;
 
-    float s = scr_speed_scale.value;
+    float s = fmin(20, fmax(1, scr_speed_scale.value));
     int w = fmtlen*8;
     int h = rows*8;
 
@@ -1074,6 +1078,7 @@ void SCR_DrawSpeedHelp(void) {
     static float airspeedsum = 0;
     static float airspeedsummax = 0;
     static char *hist = NULL;
+    static int histrows = 0;
     static double *histtimeout = NULL;
     static int histrow = 0;
     static double prevcltime = -1;
@@ -1087,12 +1092,15 @@ void SCR_DrawSpeedHelp(void) {
         onground0 = cl.onground;
     }
 
-    if (!hist) {
+    if (!hist || rows != histrows) {
+        free(hist);
+        free(histtimeout);
         hist = (char*) malloc(sizeof(char)*fmtlen*rows);
         for (int i = 0; i < fmtlen*rows; i++) hist[i] = 0;
         histtimeout = (double*) malloc(sizeof(double)*rows);
+        histrows = rows;
+        histrow = 0;
     }
-
     if (cl.time < prevcltime) {
         for (int i = 0; i < rows; i++) histtimeout[i] = 0.0;
         prevcltime = cl.time;

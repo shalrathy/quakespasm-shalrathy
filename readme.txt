@@ -58,8 +58,8 @@ Show stats and change physics to understand and train wall-running, circle jumpi
 `scr_speed 2` also show plot of speed over latest number of seconds
 `scr_speed 3` also show plots of speed increase of different view angles
 `scr_speed 4` also show plot view angle difference away from most speedy view angle over latest number of seconds
-`scr_speed 104` also show text under cursor about each jump (+100 adds this text).
-    E.g. `<^ 14 - 6 = 496 +7 30%' which means that for this jump:
+`scr_speed 14` also show jump info under cursor about each jump.
+    E.g. `<^ 14 - 6 = 496 +7 30%` which means that for this jump:
       <    Strafe left key was down
       ^    Forward key was down
       14   Speed was increased by 14 due to turning in the air
@@ -68,6 +68,7 @@ Show stats and change physics to understand and train wall-running, circle jumpi
       +7   Which is 7 faster than the previous jump
       30%  This jump increased speed 30% of what was maximum possible with perfect view angles at every frame
     A new line of text is added every jump. Text lines disappear after scr_speed_history/10 seconds.
+`scr_speed 24` add extra value to jump info text showing view angle degrees away from best speed on ground.
 `scr_speed_scale 5` increase size of scr_speed text and plots
 `scr_speed_history 100` change time plots record, 100 is 10 seconds
 `scr_speed_angles 180` change shown view angles in plots, 180 means 180 degrees left and right

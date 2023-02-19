@@ -1377,17 +1377,6 @@ void COM_InitArgv (int argc, char **argv)
 
 /*
 ================
-Test_f -- johnfitz
-================
-*/
-#ifdef _DEBUG
-static void FitzTest_f (void)
-{
-}
-#endif
-
-/*
-================
 COM_Init
 ================
 */
@@ -1434,9 +1423,6 @@ void COM_Init (void)
 
 	if (COM_CheckParm("-fitz"))
 		fitzmode = true;
-#ifdef _DEBUG
-	Cmd_AddCommand ("fitztest", FitzTest_f); //johnfitz
-#endif
 }
 
 
@@ -2266,7 +2252,6 @@ void COM_InitFilesystem (void) //johnfitz -- modified based on topaz's tutorial
 	if (COM_CheckParm ("-quoth"))
 		COM_AddGameDirectory (com_basedir, "quoth");
 
-
 	i = COM_CheckParm ("-game");
 	if (i && i < com_argc-1)
 	{
@@ -2276,8 +2261,8 @@ void COM_InitFilesystem (void) //johnfitz -- modified based on topaz's tutorial
 		com_modified = true;
 		// don't load mission packs twice
 		if (COM_CheckParm ("-rogue") && !q_strcasecmp(p, "rogue")) p = NULL;
-		if (COM_CheckParm ("-hipnotic") && !q_strcasecmp(p, "hipnotic")) p = NULL;
-		if (COM_CheckParm ("-quoth") && !q_strcasecmp(p, "quoth")) p = NULL;
+		if (p && COM_CheckParm ("-hipnotic") && !q_strcasecmp(p, "hipnotic")) p = NULL;
+		if (p && COM_CheckParm ("-quoth") && !q_strcasecmp(p, "quoth")) p = NULL;
 		if (p != NULL) {
 			COM_AddGameDirectory (com_basedir, p);
 			// QuakeSpasm extension: treat '-game missionpack' as '-missionpack'

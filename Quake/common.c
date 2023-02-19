@@ -1682,7 +1682,6 @@ static int COM_FindFile (const char *filename, int *handle, FILE **file,
 		&& strcmp(COM_FileGetExtension(filename), "ent") != 0)
 		Con_DPrintf ("FindFile: can't find %s\n", filename);
 	else	Con_DPrintf2("FindFile: can't find %s\n", filename);
-		// Log pcx, tga, lit, ent misses only if (developer.value >= 2)
 
 	if (handle)
 		*handle = -1;
@@ -2075,7 +2074,6 @@ _add_path:
 //==============================================================================
 //johnfitz -- dynamic gamedir stuff -- modified by QuakeSpasm team.
 //==============================================================================
-void ExtraMaps_NewGame (void);
 static void COM_Game_f (void)
 {
 	if (Cmd_Argc() > 1)
@@ -2547,10 +2545,22 @@ void LOC_LoadFile (const char *file)
 	memset(&archive, 0, sizeof(archive));
 	q_snprintf(path, sizeof(path), "%s/%s", com_basedir, file);
 	rw = SDL_RWFromFile(path, "rb");
+	#if defined(DO_USERDIRS)
+	if (!rw) {
+		q_snprintf(path, sizeof(path), "%s/%s", host_parms->userdir, file);
+		rw = SDL_RWFromFile(path, "rb");
+	}
+	#endif
 	if (!rw)
 	{
 		q_snprintf(path, sizeof(path), "%s/QuakeEX.kpf", com_basedir);
 		rw = SDL_RWFromFile(path, "rb");
+		#if defined(DO_USERDIRS)
+		if (!rw) {
+			q_snprintf(path, sizeof(path), "%s/QuakeEX.kpf", host_parms->userdir);
+			rw = SDL_RWFromFile(path, "rb");
+		}
+		#endif
 		if (!rw) goto fail;
 		sz = SDL_RWsize(rw);
 		if (sz <= 0) goto fail;
@@ -2823,13 +2833,12 @@ otherwise returns a negative value and leaves the pointer unchanged
 static int LOC_ParseArg (const char **pstr)
 {
 	int arg;
-	const char *start;
 	const char *str = *pstr;
 
 	// opening brace
 	if (*str != '{')
 		return -1;
-	start = ++str;
+	++str;
 
 	// optional index, defaulting to 0
 	arg = 0;

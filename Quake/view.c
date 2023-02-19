@@ -542,14 +542,15 @@ void V_PolyBlend (void)
 	glEnable (GL_BLEND);
 
 	glMatrixMode(GL_PROJECTION);
-    glLoadIdentity ();
+	glLoadIdentity ();
 	glOrtho (0, 1, 1, 0, -99999, 99999);
 	glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity ();
-
-	glColor4fv (v_blend);
+	glLoadIdentity ();
 
 	glBegin (GL_QUADS);
+
+	glColor4fv (v_blend); // inside glBegin / glEnd to workaround an AMD driver bug
+
 	glVertex2f (0,0);
 	glVertex2f (1, 0);
 	glVertex2f (1, 1);
@@ -822,6 +823,7 @@ void V_CalcRefdef (void)
 	view->model = cl.model_precache[cl.stats[STAT_WEAPON]];
 	view->frame = cl.stats[STAT_WEAPONFRAME];
 	view->colormap = vid.colormap;
+	view->scale = ENTSCALE_DEFAULT;
 
 //johnfitz -- v_gunkick
 	if (v_gunkick.value == 1) //original quake kick
@@ -868,6 +870,20 @@ void V_CalcRefdef (void)
 
 	if (chase_active.value)
 		Chase_UpdateForDrawing (); //johnfitz
+}
+
+/*
+==================
+V_RestoreAngles
+
+Resets the viewentity angles to the last values received from the server
+(undoing the manual adjustments performed by V_CalcRefdef)
+==================
+*/
+void V_RestoreAngles (void)
+{
+	entity_t *ent = &cl_entities[cl.viewentity];
+	VectorCopy (ent->msg_angles[0], ent->angles);
 }
 
 /*
@@ -947,7 +963,7 @@ void V_Init (void)
 	Cvar_RegisterVariable (&v_kickroll);
 	Cvar_RegisterVariable (&v_kickpitch);
 	Cvar_RegisterVariable (&v_gunkick); //johnfitz
-	
+
 	Cvar_RegisterVariable (&r_viewmodel_quake); //MarkV
 }
 

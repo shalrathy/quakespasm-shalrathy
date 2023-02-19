@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -25,8 +25,12 @@
 #define _INCLUDED_WINDOWS_H
 
 #if defined(__WIN32__)
-#define WIN32_LEAN_AND_MEAN
-#define STRICT
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN 1
+#endif
+#ifndef STRICT
+#define STRICT 1
+#endif
 #ifndef UNICODE
 #define UNICODE 1
 #endif
@@ -63,9 +67,18 @@ extern int WIN_SetErrorFromHRESULT(const char *prefix, HRESULT hr);
 /* Sets an error message based on GetLastError(). Always return -1. */
 extern int WIN_SetError(const char *prefix);
 
+#if !defined(__WINRT__)
+/* Load a function from combase.dll */
+void *WIN_LoadComBaseFunction(const char *name);
+#endif
+
 /* Wrap up the oddities of CoInitialize() into a common function. */
 extern HRESULT WIN_CoInitialize(void);
 extern void WIN_CoUninitialize(void);
+
+/* Wrap up the oddities of RoInitialize() into a common function. */
+extern HRESULT WIN_RoInitialize(void);
+extern void WIN_RoUninitialize(void);
 
 /* Returns SDL_TRUE if we're running on Windows Vista and newer */
 extern BOOL WIN_IsWindowsVistaOrGreater(void);

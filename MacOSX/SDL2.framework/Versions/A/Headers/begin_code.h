@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -34,7 +34,7 @@
 #define _begin_code_h
 
 #ifndef SDL_DEPRECATED
-#  if (__GNUC__ >= 4)  /* technically, this arrived in gcc 3.1, but oh well. */
+#  if defined(__GNUC__) && (__GNUC__ >= 4)  /* technically, this arrived in gcc 3.1, but oh well. */
 #    define SDL_DEPRECATED __attribute__((deprecated))
 #  else
 #    define SDL_DEPRECATED
@@ -107,7 +107,7 @@
 #ifdef __BORLANDC__
 #pragma nopackwarning
 #endif
-#ifdef _M_X64
+#ifdef _WIN64
 /* Use 8-byte alignment on 64-bit architectures, so pointers are aligned */
 #pragma pack(push,8)
 #else

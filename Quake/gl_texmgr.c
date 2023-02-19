@@ -359,7 +359,7 @@ void TexMgr_FreeTexture (gltexture_t *kill)
 
 	if (in_reload_images)
 		return;
-	
+
 	if (kill == NULL)
 	{
 		Con_Printf ("TexMgr_FreeTexture: NULL texture\n");
@@ -605,7 +605,6 @@ void TexMgr_Init (void)
 	int i;
 	static byte notexture_data[16] = {159,91,83,255,0,0,0,255,0,0,0,255,159,91,83,255}; //black and pink checker
 	static byte nulltexture_data[16] = {127,191,255,255,0,0,0,255,0,0,0,255,127,191,255,255}; //black and blue checker
-	extern texture_t *r_notexture_mip, *r_notexture_mip2;
 
 	// init texture list
 	free_gltextures = (gltexture_t *) Hunk_AllocName (MAX_GLTEXTURES * sizeof(gltexture_t), "gltextures");
@@ -672,11 +671,15 @@ TexMgr_SafeTextureSize -- return a size with hardware and user prefs in mind
 */
 int TexMgr_SafeTextureSize (int s)
 {
+	int p = (int)gl_max_size.value;
 	if (!gl_texture_NPOT)
 		s = TexMgr_Pad(s);
-	if ((int)gl_max_size.value > 0)
-		s = q_min(TexMgr_Pad((int)gl_max_size.value), s);
-	s = q_min(gl_hardware_maxsize, s);
+	if (p > 0) {
+		p = TexMgr_Pad(p);
+		if (p < s) s = p;
+	}
+	if (s > gl_hardware_maxsize)
+	    s = gl_hardware_maxsize;
 	return s;
 }
 
@@ -1048,7 +1051,7 @@ static void TexMgr_LoadImage32 (gltexture_t *glt, unsigned *data)
 	glTexImage2D (GL_TEXTURE_2D, 0, internalformat, glt->width, glt->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
 	// upload mipmaps
-	if (glt->flags & TEXPREF_MIPMAP)
+	if (glt->flags & TEXPREF_MIPMAP && !(glt->flags & TEXPREF_WARPIMAGE)) // warp image mipmaps are generated later
 	{
 		mipwidth = glt->width;
 		mipheight = glt->height;
@@ -1412,7 +1415,7 @@ void TexMgr_ReloadImages (void)
 		glGenTextures(1, &glt->texnum);
 		TexMgr_ReloadImage (glt, -1, -1);
 	}
-	
+
 	in_reload_images = false;
 }
 
@@ -1451,7 +1454,7 @@ void GL_SelectTexture (GLenum target)
 {
 	if (target == currenttarget)
 		return;
-		
+
 	GL_SelectTextureFunc(target);
 	currenttarget = target;
 }
@@ -1526,7 +1529,7 @@ static void GL_DeleteTexture (gltexture_t *texture)
 /*
 ================
 GL_ClearBindings -- ericw
- 
+
 Invalidates cached bindings, so the next GL_Bind calls for each TMU will
 make real glBindTexture calls.
 Call this after changing the binding outside of GL_Bind.

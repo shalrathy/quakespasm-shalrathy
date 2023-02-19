@@ -45,8 +45,6 @@ float	turbsin[] =
 //
 //==============================================================================
 
-extern	qmodel_t	*loadmodel;
-
 msurface_t	*warpface;
 
 cvar_t gl_subdivide_size = {"gl_subdivide_size", "128", CVAR_ARCHIVE};
@@ -256,6 +254,8 @@ void R_UpdateWarpTextures (void)
 		//copy to texture
 		GL_Bind (tx->warpimage);
 		glCopyTexSubImage2D (GL_TEXTURE_2D, 0, 0, 0, glx, gly+glheight-gl_warpimagesize, gl_warpimagesize, gl_warpimagesize);
+		if (GL_GenerateMipmap)
+			GL_GenerateMipmap (GL_TEXTURE_2D);
 
 		tx->update_warp = false;
 	}

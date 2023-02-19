@@ -176,6 +176,7 @@ void R_Init (void)
 	Cvar_RegisterVariable (&r_shadows);
 	Cvar_RegisterVariable (&r_wateralpha);
 	Cvar_SetCallback (&r_wateralpha, R_SetWateralpha_f);
+	Cvar_RegisterVariable (&r_litwater);
 	Cvar_RegisterVariable (&r_dynamic);
 	Cvar_RegisterVariable (&r_novis);
 	Cvar_RegisterVariable (&r_speeds);
@@ -449,7 +450,7 @@ static qboolean GL_CheckShader (GLuint shader)
 
 		memset(infolog, 0, sizeof(infolog));
 		GL_GetShaderInfoLogFunc (shader, sizeof(infolog), NULL, infolog);
-		
+
 		Con_Warning ("GLSL program failed to compile: %s", infolog);
 
 		return false;
@@ -536,12 +537,12 @@ GLuint GL_CreateProgram (const GLchar *vertSource, const GLchar *fragSource, int
 	GL_DeleteShaderFunc (vertShader);
 	GL_AttachShaderFunc (program, fragShader);
 	GL_DeleteShaderFunc (fragShader);
-	
+
 	for (i = 0; i < numbindings; i++)
 	{
 		GL_BindAttribLocationFunc (program, bindings[i].attrib, bindings[i].name);
 	}
-	
+
 	GL_LinkProgramFunc (program);
 
 	if (!GL_CheckProgram (program))

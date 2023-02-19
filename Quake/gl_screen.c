@@ -87,13 +87,13 @@ cvar_t		scr_crosshairscale = {"scr_crosshairscale", "1", CVAR_ARCHIVE};
 cvar_t		scr_showfps = {"scr_showfps", "0", CVAR_NONE};
 cvar_t		scr_clock = {"scr_clock", "0", CVAR_NONE};
 //johnfitz
+cvar_t		scr_usekfont = {"scr_usekfont", "0", CVAR_NONE}; // 2021 re-release
 
 cvar_t		scr_viewsize = {"viewsize","100", CVAR_ARCHIVE};
 cvar_t		scr_fov = {"fov","90",CVAR_NONE};	// 10 - 170
 cvar_t		scr_fov_adapt = {"fov_adapt","1",CVAR_ARCHIVE};
 cvar_t		scr_conspeed = {"scr_conspeed","500",CVAR_ARCHIVE};
 cvar_t		scr_centertime = {"scr_centertime","2",CVAR_NONE};
-cvar_t		scr_showram = {"showram","1",CVAR_NONE};
 cvar_t		scr_showturtle = {"showturtle","0",CVAR_NONE};
 cvar_t		scr_showpause = {"showpause","1",CVAR_NONE};
 cvar_t		scr_printspeed = {"scr_printspeed","8",CVAR_NONE};
@@ -105,7 +105,6 @@ extern	cvar_t	crosshair;
 
 qboolean	scr_initialized;		// ready to draw
 
-qpic_t		*scr_ram;
 qpic_t		*scr_net;
 qpic_t		*scr_turtle;
 
@@ -306,7 +305,7 @@ static void SCR_CalcRefdef (void)
 
 	//johnfitz -- rewrote this section
 	size = scr_viewsize.value;
-	scale = CLAMP (1.0, scr_sbarscale.value, (float)glwidth / 320.0);
+	scale = CLAMP (1.0f, scr_sbarscale.value, (float)glwidth / 320.0f);
 
 	if (size >= 120 || cl.intermission || scr_sbaralpha.value < 1) //johnfitz -- scr_sbaralpha.value
 		sb_lines = 0;
@@ -315,12 +314,12 @@ static void SCR_CalcRefdef (void)
 	else
 		sb_lines = 48 * scale;
 
-	size = q_min(scr_viewsize.value, 100) / 100;
+	size = q_min(scr_viewsize.value, 100.f) / 100;
 	//johnfitz
 
 	//johnfitz -- rewrote this section
-	r_refdef.vrect.width = q_max(glwidth * size, 96); //no smaller than 96, for icons
-	r_refdef.vrect.height = q_min(glheight * size, glheight - sb_lines); //make room for sbar
+	r_refdef.vrect.width = q_max(glwidth * size, 96.0f); //no smaller than 96, for icons
+	r_refdef.vrect.height = q_min((int)(glheight * size), glheight - sb_lines); //make room for sbar
 	r_refdef.vrect.x = (glwidth - r_refdef.vrect.width)/2;
 	r_refdef.vrect.y = (glheight - sb_lines - r_refdef.vrect.height)/2;
 	//johnfitz
@@ -385,7 +384,6 @@ SCR_LoadPics -- johnfitz
 */
 void SCR_LoadPics (void)
 {
-	scr_ram = Draw_PicFromWad ("ram");
 	scr_net = Draw_PicFromWad ("net");
 	scr_turtle = Draw_PicFromWad ("turtle");
 }
@@ -410,6 +408,7 @@ void SCR_Init (void)
 	Cvar_RegisterVariable (&scr_showfps);
 	Cvar_RegisterVariable (&scr_clock);
 	//johnfitz
+	Cvar_RegisterVariable (&scr_usekfont); // 2021 re-release
 	Cvar_SetCallback (&scr_fov, SCR_Callback_refdef);
 	Cvar_SetCallback (&scr_fov_adapt, SCR_Callback_refdef);
 	Cvar_SetCallback (&scr_viewsize, SCR_Callback_refdef);
@@ -417,7 +416,6 @@ void SCR_Init (void)
 	Cvar_RegisterVariable (&scr_fov_adapt);
 	Cvar_RegisterVariable (&scr_viewsize);
 	Cvar_RegisterVariable (&scr_conspeed);
-	Cvar_RegisterVariable (&scr_showram);
 	Cvar_RegisterVariable (&scr_showturtle);
 	Cvar_RegisterVariable (&scr_showpause);
 	Cvar_RegisterVariable (&scr_centertime);
@@ -552,24 +550,6 @@ void SCR_DrawDevStats (void)
 
 	sprintf (str, "Tempents |%4i %4i", dev_stats.tempents, dev_peakstats.tempents);
 	Draw_String (x, (y++)*8-x, str);
-}
-
-/*
-==============
-SCR_DrawRam
-==============
-*/
-void SCR_DrawRam (void)
-{
-	if (!scr_showram.value)
-		return;
-
-	if (!r_cache_thrash)
-		return;
-
-	GL_SetCanvas (CANVAS_DEFAULT); //johnfitz
-
-	Draw_Pic (scr_vrect.x+32, scr_vrect.y, scr_ram);
 }
 
 /*
@@ -814,7 +794,7 @@ void SCR_ScreenShot_f (void)
 	{
 		q_snprintf (imagename, sizeof(imagename), "spasm%04i.%s", i, ext);	// "fitz%04i.tga"
 		q_snprintf (checkname, sizeof(checkname), "%s/%s", com_gamedir, imagename);
-		if (Sys_FileTime(checkname) == -1)
+		if (Sys_FileType(checkname) == FS_ENT_NONE)
 			break;	// file doesn't exist
 	}
 	if (i == 10000)
@@ -1114,7 +1094,6 @@ void SCR_UpdateScreen (void)
 	else
 	{
 		SCR_DrawCrosshair (); //johnfitz
-		SCR_DrawRam ();
 		SCR_DrawNet ();
 		SCR_DrawTurtle ();
 		SCR_DrawPause ();

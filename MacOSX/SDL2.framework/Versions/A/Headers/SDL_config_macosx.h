@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -272,7 +272,6 @@
 #define SDL_FILESYSTEM_COCOA   1
 
 /* Enable assembly routines */
-#define SDL_ASSEMBLY_ROUTINES   1
 #ifdef __ppc__
 #define SDL_ALTIVEC_BLITTERS    1
 #endif

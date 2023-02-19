@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -234,6 +234,19 @@ typedef uint64_t Uint64;
 
 /* @} *//* Basic data types */
 
+/**
+ *  \name Floating-point constants
+ */
+/* @{ */
+
+#ifdef FLT_EPSILON
+#define SDL_FLT_EPSILON FLT_EPSILON
+#else
+#define SDL_FLT_EPSILON 1.1920928955078125e-07F /* 0x0.000002p0 */
+#endif
+
+/* @} *//* Floating-point constants */
+
 /* Make sure we have macros for printing width-based integers.
  * <stdint.h> should define these but this is not true all platforms.
  * (for example win32) */
@@ -354,8 +367,22 @@ typedef uint64_t Uint64;
 #endif
 #endif /* SDL_DISABLE_ANALYZE_MACROS */
 
+#ifndef SDL_COMPILE_TIME_ASSERT
+#if defined(__cplusplus)
+#if (__cplusplus >= 201103L)
+#define SDL_COMPILE_TIME_ASSERT(name, x)  static_assert(x, #x)
+#endif
+#elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
+#define SDL_COMPILE_TIME_ASSERT(name, x) _Static_assert(x, #x)
+#endif
+#endif /* !SDL_COMPILE_TIME_ASSERT */
+
+#ifndef SDL_COMPILE_TIME_ASSERT
+/* universal, but may trigger -Wunused-local-typedefs */
 #define SDL_COMPILE_TIME_ASSERT(name, x)               \
        typedef int SDL_compile_time_assert_ ## name[(x) * 2 - 1]
+#endif
+
 /** \cond */
 #ifndef DOXYGEN_SHOULD_IGNORE_THIS
 SDL_COMPILE_TIME_ASSERT(uint8, sizeof(Uint8) == 1);
@@ -443,7 +470,7 @@ extern DECLSPEC int SDLCALL SDL_GetNumAllocations(void);
 extern DECLSPEC char *SDLCALL SDL_getenv(const char *name);
 extern DECLSPEC int SDLCALL SDL_setenv(const char *name, const char *value, int overwrite);
 
-extern DECLSPEC void SDLCALL SDL_qsort(void *base, size_t nmemb, size_t size, int (*compare) (const void *, const void *));
+extern DECLSPEC void SDLCALL SDL_qsort(void *base, size_t nmemb, size_t size, int (SDLCALL *compare) (const void *, const void *));
 
 extern DECLSPEC int SDLCALL SDL_abs(int x);
 

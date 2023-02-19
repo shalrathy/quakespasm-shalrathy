@@ -79,6 +79,7 @@ typedef struct entity_s
 											//  not split
 
 	byte					alpha;			//johnfitz -- alpha
+	byte					scale;
 	byte					lerpflags;		//johnfitz -- lerping
 	float					lerpstart;		//johnfitz -- animation lerping
 	float					lerptime;		//johnfitz -- animation lerping
@@ -166,7 +167,6 @@ void R_PushDlights (void);
 // surface cache related
 //
 extern	int		reinit_surfcache;	// if 1, surface cache is currently empty and
-extern qboolean	r_cache_thrash;	// set if thrashing the surface cache
 
 int	D_SurfaceCacheForRes (int width, int height);
 void D_FlushCaches (void);

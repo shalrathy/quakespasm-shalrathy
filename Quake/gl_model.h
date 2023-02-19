@@ -20,8 +20,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#ifndef __MODEL__
-#define __MODEL__
+#ifndef GL_MODEL_H
+#define GL_MODEL_H
 
 #include "modelgen.h"
 #include "spritegn.h"
@@ -39,6 +39,9 @@ m*_t structures are in-memory
 #define	EF_MUZZLEFLASH 			2
 #define	EF_BRIGHTLIGHT 			4
 #define	EF_DIMLIGHT 			8
+#define EF_QEX_QUADLIGHT		16	// 2021 rerelease
+#define EF_QEX_PENTALIGHT		32	// 2021 rerelease
+#define EF_QEX_CANDLELIGHT		64	// 2021 rerelease
 
 
 /*
@@ -481,7 +484,7 @@ typedef struct qmodel_s
 	qboolean	viswarn; // for Mod_DecompressVis()
 
 	int			bspversion;
-
+	qboolean	haslitwater;
 //
 // alias model
 //
@@ -508,10 +511,10 @@ qmodel_t *Mod_ForName (const char *name, qboolean crash);
 void	*Mod_Extradata (qmodel_t *mod);	// handles caching
 void	Mod_TouchModel (const char *name);
 
-mleaf_t *Mod_PointInLeaf (float *p, qmodel_t *model);
+mleaf_t *Mod_PointInLeaf (vec3_t p, qmodel_t *model);
 byte	*Mod_LeafPVS (mleaf_t *leaf, qmodel_t *model);
 byte	*Mod_NoVisPVS (qmodel_t *model);
 
 void Mod_SetExtraFlags (qmodel_t *mod);
 
-#endif	// __MODEL__
+#endif	/* GL_MODEL_H */

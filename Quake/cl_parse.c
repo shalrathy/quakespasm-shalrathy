@@ -73,26 +73,30 @@ const char *svc_strings[] =
 	"",	// 35
 	"",	// 36
 	"svc_skybox", // 37					// [string] skyname
-	"", // 38
+	"svc_botchat", // 38 (2021 RE-RELEASE)
 	"", // 39
 	"svc_bf", // 40						// no data
 	"svc_fog", // 41					// [byte] density [byte] red [byte] green [byte] blue [float] time
 	"svc_spawnbaseline2", //42			// support for large modelindex, large framenum, alpha, using flags
 	"svc_spawnstatic2", // 43			// support for large modelindex, large framenum, alpha, using flags
 	"svc_spawnstaticsound2", //	44		// [coord3] [short] samp [byte] vol [byte] aten
-	"", // 45
-	"", // 46
-	"", // 47
-	"", // 48
-	"", // 49
-	"", // 50
-	"", // 51
-	"svc_achievement", // 52 -- used by the 2021 rerelease
-	"", // 53
-	"", // 54
-	"", // 55
 //johnfitz
+
+// 2021 RE-RELEASE:
+	"svc_setviews", // 45
+	"svc_updateping", // 46
+	"svc_updatesocial", // 47
+	"svc_updateplinfo", // 48
+	"svc_rawprint", // 49
+	"svc_servervars", // 50
+	"svc_seq", // 51
+	"svc_achievement", // 52
+	"svc_chat", // 53
+	"svc_levelcompleted", // 54
+	"svc_backtolobby", // 55
+	"svc_localsound" // 56
 };
+#define	NUM_SVC_STRINGS	(sizeof(svc_strings) / sizeof(svc_strings[0]))
 
 qboolean warn_about_nehahra_protocol; //johnfitz
 
@@ -122,6 +126,7 @@ entity_t	*CL_EntityNum (int num)
 		{
 			cl_entities[cl.num_entities].colormap = vid.colormap;
 			cl_entities[cl.num_entities].lerpflags |= LERP_RESETMOVE|LERP_RESETANIM; //johnfitz
+			cl_entities[cl.num_entities].baseline.scale = ENTSCALE_DEFAULT;
 			cl.num_entities++;
 		}
 	}
@@ -188,6 +193,23 @@ void CL_ParseStartSoundPacket(void)
 		pos[i] = MSG_ReadCoord (cl.protocolflags);
 
 	S_StartSound (ent, channel, cl.sound_precache[sound_num], pos, volume/255.0, attenuation);
+}
+
+/*
+==================
+CL_ParseLocalSound - for 2021 rerelease
+==================
+*/
+void CL_ParseLocalSound(void)
+{
+	int field_mask, sound_num;
+
+	field_mask = MSG_ReadByte();
+	sound_num = (field_mask&SND_LARGESOUND) ? MSG_ReadShort() : MSG_ReadByte();
+	if (sound_num >= MAX_SOUNDS)
+		Host_Error ("CL_ParseLocalSound: %i > MAX_SOUNDS", sound_num);
+
+	S_LocalSound (cl.sound_precache[sound_num]->name);
 }
 
 /*
@@ -301,7 +323,7 @@ void CL_ParseServerInfo (void)
 		}
 	}
 	else cl.protocolflags = 0;
-	
+
 // parse maxclients
 	cl.maxclients = MSG_ReadByte ();
 	if (cl.maxclients < 1 || cl.maxclients > MAX_SCOREBOARD)
@@ -335,7 +357,7 @@ void CL_ParseServerInfo (void)
 		str = MSG_ReadString ();
 		if (!str[0])
 			break;
-		if (nummodels==MAX_MODELS)
+		if (nummodels == MAX_MODELS)
 		{
 			Host_Error ("Server sent too many model precaches");
 		}
@@ -355,7 +377,7 @@ void CL_ParseServerInfo (void)
 		str = MSG_ReadString ();
 		if (!str[0])
 			break;
-		if (numsounds==MAX_SOUNDS)
+		if (numsounds == MAX_SOUNDS)
 		{
 			Host_Error ("Server sent too many sound precaches");
 		}
@@ -565,7 +587,9 @@ void CL_ParseUpdate (int bits)
 		else
 			ent->alpha = ent->baseline.alpha;
 		if (bits & U_SCALE)
-			MSG_ReadByte(); // PROTOCOL_RMQ: currently ignored
+			ent->scale = MSG_ReadByte();
+		else
+			ent->scale = ent->baseline.scale;
 		if (bits & U_FRAME2)
 			ent->frame = (ent->frame & 0x00FF) | (MSG_ReadByte() << 8);
 		if (bits & U_MODEL2)
@@ -599,6 +623,7 @@ void CL_ParseUpdate (int bits)
 		}
 		else
 			ent->alpha = ent->baseline.alpha;
+		ent->scale = ent->baseline.scale;
 	}
 	//johnfitz
 
@@ -660,6 +685,7 @@ void CL_ParseBaseline (entity_t *ent, int version) //johnfitz -- added argument
 	}
 
 	ent->baseline.alpha = (bits & B_ALPHA) ? MSG_ReadByte() : ENTALPHA_DEFAULT; //johnfitz -- PROTOCOL_FITZQUAKE
+	ent->baseline.scale = (bits & B_SCALE) ? MSG_ReadByte() : ENTSCALE_DEFAULT;
 }
 
 
@@ -821,7 +847,7 @@ void CL_ParseClientdata (void)
 	else
 		cl.viewent.alpha = ENTALPHA_DEFAULT;
 	//johnfitz
-    
+
 	//johnfitz -- lerping
 	//ericw -- this was done before the upper 8 bits of cl.stats[STAT_WEAPON] were filled in, breaking on large maps like zendar.bsp
 	if (cl.viewent.model != cl.model_precache[cl.stats[STAT_WEAPON]])
@@ -899,7 +925,7 @@ void CL_ParseStatic (int version) //johnfitz -- added a parameter
 	ent->skinnum = ent->baseline.skin;
 	ent->effects = ent->baseline.effects;
 	ent->alpha = ent->baseline.alpha; //johnfitz -- alpha
-
+	ent->scale = ent->baseline.scale;
 	VectorCopy (ent->baseline.origin, ent->origin);
 	VectorCopy (ent->baseline.angles, ent->angles);
 	R_AddEfrags (ent);
@@ -933,6 +959,41 @@ void CL_ParseStaticSound (int version) //johnfitz -- added argument
 }
 
 
+#if 0	/* for debugging. from fteqw. */
+static void CL_DumpPacket (void)
+{
+	int			i, pos;
+	unsigned char	*packet = net_message.data;
+
+	Con_Printf("CL_DumpPacket, BEGIN:\n");
+	pos = 0;
+	while (pos < net_message.cursize)
+	{
+		Con_Printf("%5i ", pos);
+		for (i = 0; i < 16; i++)
+		{
+			if (pos >= net_message.cursize)
+				Con_Printf(" X ");
+			else	Con_Printf("%2x ", packet[pos]);
+			pos++;
+		}
+		pos -= 16;
+		for (i = 0; i < 16; i++)
+		{
+			if (pos >= net_message.cursize)
+				Con_Printf("X");
+			else if (packet[pos] == 0)
+				Con_Printf(".");
+			else	Con_Printf("%c", packet[pos]);
+			pos++;
+		}
+		Con_Printf("\n");
+	}
+
+	Con_Printf("CL_DumpPacket, --- END ---\n");
+}
+#endif	/* CL_DumpPacket */
+
 #define SHOWNET(x) if(cl_shownet.value==2)Con_Printf ("%3i:%s\n", msg_readcount-1, x);
 
 /*
@@ -955,7 +1016,8 @@ void CL_ParseServerMessage (void)
 	else if (cl_shownet.value == 2)
 		Con_Printf ("------------------\n");
 
-	cl.onground = false;	// unless the server says otherwise
+//	cl.onground = false;	// unless the server says otherwise
+
 //
 // parse the message
 //
@@ -983,13 +1045,16 @@ void CL_ParseServerMessage (void)
 			continue;
 		}
 
-		SHOWNET(svc_strings[cmd]);
+		if (cmd < (int)NUM_SVC_STRINGS) {
+			SHOWNET(svc_strings[cmd]);
+		}
 
 	// other commands
 		switch (cmd)
 		{
 		default:
-			Host_Error ("Illegible server message, previous was %s", svc_strings[lastcmd]); //johnfitz -- added svc_strings[lastcmd]
+		//	CL_DumpPacket ();
+			Host_Error ("Illegible server message %d (previous was %s)", cmd, svc_strings[lastcmd]); //johnfitz -- added svc_strings[lastcmd]
 			break;
 
 		case svc_nop:
@@ -1188,6 +1253,7 @@ void CL_ParseServerMessage (void)
 			cl.intermission = 1;
 			cl.completed_time = cl.time;
 			vid.recalc_refdef = true;	// go to full screen
+			V_RestoreAngles ();
 			break;
 
 		case svc_finale:
@@ -1199,6 +1265,7 @@ void CL_ParseServerMessage (void)
 			SCR_CenterPrint (str);
 			Con_LogCenterPrint (str);
 			//johnfitz
+			V_RestoreAngles ();
 			break;
 
 		case svc_cutscene:
@@ -1210,6 +1277,7 @@ void CL_ParseServerMessage (void)
 			SCR_CenterPrint (str);
 			Con_LogCenterPrint (str);
 			//johnfitz
+			V_RestoreAngles ();
 			break;
 
 		case svc_sellscreen:
@@ -1248,6 +1316,9 @@ void CL_ParseServerMessage (void)
 		case svc_achievement:
 			str = MSG_ReadString();
 			Con_DPrintf("Ignoring svc_achievement (%s)\n", str);
+			break;
+		case svc_localsound:
+			CL_ParseLocalSound();
 			break;
 		}
 

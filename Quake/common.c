@@ -421,6 +421,9 @@ int Q_atoi (const char *str)
 	int		sign;
 	int		c;
 
+	while (q_isspace (*str))
+		++str;
+
 	if (*str == '-')
 	{
 		sign = -1;
@@ -480,6 +483,9 @@ float Q_atof (const char *str)
 	int		sign;
 	int		c;
 	int	decimal, total;
+
+	while (q_isspace (*str))
+		++str;
 
 	if (*str == '-')
 	{
@@ -963,7 +969,7 @@ void *SZ_GetSpace (sizebuf_t *buf, int length)
 			Sys_Error ("SZ_GetSpace: %i is > full buffer size", length);
 
 		buf->overflowed = true;
-		Con_Printf ("SZ_GetSpace: overflow");
+		Con_Printf ("SZ_GetSpace: overflow\n");
 		SZ_Clear (buf);
 	}
 
@@ -1598,7 +1604,7 @@ static int COM_FindFile (const char *filename, int *handle, FILE **file,
 	searchpath_t	*search;
 	char		netpath[MAX_OSPATH];
 	pack_t		*pak;
-	int		i, findtime;
+	int		i;
 
 	if (file && handle)
 		Sys_Error ("COM_FindFile: both handle and file set");
@@ -1650,8 +1656,7 @@ static int COM_FindFile (const char *filename, int *handle, FILE **file,
 			}
 
 			q_snprintf (netpath, sizeof(netpath), "%s/%s",search->filename, filename);
-			findtime = Sys_FileTime (netpath);
-			if (findtime == -1)
+			if (! (Sys_FileType(netpath) & FS_ENT_FILE))
 				continue;
 
 			if (path_id)
@@ -1869,7 +1874,7 @@ byte *COM_LoadMallocFile_TextMode_OSPath (const char *path, long *len_out)
 	FILE	*f;
 	byte	*data;
 	long	len, actuallen;
-	
+
 	// ericw -- this is used by Host_Loadgame_f. Translate CRLF to LF on load games,
 	// othewise multiline messages have a garbage character at the end of each line.
 	// TODO: could handle in a way that allows loading CRLF savegames on mac/linux
@@ -1877,26 +1882,34 @@ byte *COM_LoadMallocFile_TextMode_OSPath (const char *path, long *len_out)
 	f = fopen (path, "rt");
 	if (f == NULL)
 		return NULL;
-	
+
 	len = COM_filelength (f);
 	if (len < 0)
+	{
+		fclose (f);
 		return NULL;
-	
+	}
+
 	data = (byte *) malloc (len + 1);
 	if (data == NULL)
+	{
+		fclose (f);
 		return NULL;
+	}
 
 	// (actuallen < len) if CRLF to LF translation was performed
 	actuallen = fread (data, 1, len, f);
 	if (ferror(f))
 	{
+		fclose (f);
 		free (data);
 		return NULL;
 	}
 	data[actuallen] = '\0';
-	
+
 	if (len_out != NULL)
 		*len_out = actuallen;
+	fclose (f);
 	return data;
 }
 
@@ -2196,6 +2209,7 @@ static void COM_Game_f (void)
 			R_NewGame ();
 		}
 		ExtraMaps_NewGame ();
+		Host_Resetdemos ();
 		DemoList_Rebuild ();
 
 		Con_Printf("\"game\" changed to \"%s\"\n", COM_SkipPath(com_gamedir));

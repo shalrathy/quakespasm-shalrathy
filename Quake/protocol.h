@@ -63,7 +63,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define U_FRAME2		(1<<17) // 1 byte, this is .frame & 0xFF00 (second byte)
 #define U_MODEL2		(1<<18) // 1 byte, this is .modelindex & 0xFF00 (second byte)
 #define U_LERPFINISH	(1<<19) // 1 byte, 0.0-1.0 maps to 0-255, not sent if exactly 0.1, this is ent->v.nextthink - sv.time, used for lerping
-#define U_SCALE			(1<<20) // 1 byte, for PROTOCOL_RMQ PRFL_EDICTSCALE, currently read but ignored
+#define U_SCALE			(1<<20) // 1 byte, for PROTOCOL_RMQ PRFL_EDICTSCALE
 #define U_UNUSED21		(1<<21)
 #define U_UNUSED22		(1<<22)
 #define U_EXTEND2		(1<<23) // another byte to follow, future expansion
@@ -125,16 +125,21 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define B_LARGEMODEL	(1<<0)	// modelindex is short instead of byte
 #define B_LARGEFRAME	(1<<1)	// frame is short instead of byte
 #define B_ALPHA			(1<<2)	// 1 byte, uses ENTALPHA_ENCODE, not sent if ENTALPHA_DEFAULT
+#define B_SCALE			(1<<3)
 //johnfitz
 
 //johnfitz -- PROTOCOL_FITZQUAKE -- alpha encoding
 #define ENTALPHA_DEFAULT	0	//entity's alpha is "default" (i.e. water obeys r_wateralpha) -- must be zero so zeroed out memory works
 #define ENTALPHA_ZERO		1	//entity is invisible (lowest possible alpha)
 #define ENTALPHA_ONE		255 //entity is fully opaque (highest possible alpha)
-#define ENTALPHA_ENCODE(a)	(((a)==0)?ENTALPHA_DEFAULT:Q_rint(CLAMP(1,(a)*254.0f+1,255))) //server convert to byte to send to client
+#define ENTALPHA_ENCODE(a)	(((a)==0)?ENTALPHA_DEFAULT:Q_rint(CLAMP(1.0f,(a)*254.0f+1,255.0f))) //server convert to byte to send to client
 #define ENTALPHA_DECODE(a)	(((a)==ENTALPHA_DEFAULT)?1.0f:((float)(a)-1)/(254)) //client convert to float for rendering
 #define ENTALPHA_TOSAVE(a)	(((a)==ENTALPHA_DEFAULT)?0.0f:(((a)==ENTALPHA_ZERO)?-1.0f:((float)(a)-1)/(254))) //server convert to float for savegame
 //johnfitz
+
+#define ENTSCALE_DEFAULT	16 // Equivalent to float 1.0f due to byte packing.
+#define ENTSCALE_ENCODE(a)	((a) ? ((a) * ENTSCALE_DEFAULT) : ENTSCALE_DEFAULT) // Convert to byte
+#define ENTSCALE_DECODE(a)	((float)(a) / ENTSCALE_DEFAULT) // Convert to float for rendering
 
 // defaults for clientinfo messages
 #define	DEFAULT_VIEWHEIGHT	22
@@ -201,9 +206,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	svc_spawnstaticsound2	44	// [coord3] [short] samp [byte] vol [byte] aten
 //johnfitz
 
-//used by the 2021 rerelease
-//Note: same value as svcdp_effect!
-#define svc_achievement				52		// [string] id
+// 2021 re-release server messages - see:
+// https://steamcommunity.com/sharedfiles/filedetails/?id=2679459726
+#define svc_botchat		38
+#define svc_setviews		45
+#define svc_updateping		46
+#define svc_updatesocial	47
+#define svc_updateplinfo	48
+#define svc_rawprint		49
+#define svc_servervars		50
+#define svc_seq			51
+// Note: svc_achievement has same value as svcdp_effect!
+#define svc_achievement		52	// [string] id
+#define svc_chat		53
+#define svc_levelcompleted	54
+#define svc_backtolobby		55
+#define svc_localsound		56
 
 //
 // client to server
@@ -244,6 +262,7 @@ typedef struct
 	unsigned char 	colormap;	//johnfitz -- was int
 	unsigned char 	skin;		//johnfitz -- was int
 	unsigned char	alpha;		//johnfitz -- added
+	unsigned char	scale;		//Quakespasm: for model scale support.
 	int		effects;
 } entity_state_t;
 
@@ -258,4 +277,3 @@ typedef struct
 } usercmd_t;
 
 #endif	/* _QUAKE_PROTOCOL_H */
-
